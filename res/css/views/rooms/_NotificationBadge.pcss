@@ -2,7 +2,7 @@
 Copyright 2024 New Vector Ltd.
 Copyright 2020 The Matrix.org Foundation C.I.C.
 
-SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only
+SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only OR LicenseRef-Element-Commercial
 Please see LICENSE files in the repository root for full details.
 */
 
@@ -18,7 +18,9 @@ Please see LICENSE files in the repository root for full details.
     /*     ^- The count is an element floating within that. */
 
     &.mx_NotificationBadge_visible {
-        background-color: $roomtile-default-badge-bg-color;
+        /** IBM CHANGES FOR BRANDING - DO NOT OVERWRITE - START **/
+        background-color: var(--accent-color);
+        /** IBM CHANGES FOR BRANDING - DO NOT OVERWRITE - END **/
 
         /* Create a flexbox to order the count a bit easier */
         display: flex;

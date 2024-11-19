@@ -2,15 +2,16 @@
 Copyright 2024 New Vector Ltd.
 Copyright 2017 Michael Telatynski <7t3chguy@gmail.com>
 
-SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only
+SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only OR LicenseRef-Element-Commercial
 Please see LICENSE files in the repository root for full details.
  */
 
-import { MatrixEvent, EventType, RelationType } from "matrix-js-sdk/src/matrix";
+import { type MatrixEvent, EventType, RelationType } from "matrix-js-sdk/src/matrix";
 import { KnownMembership } from "matrix-js-sdk/src/types";
 
 import SettingsStore from "./settings/SettingsStore";
-import { IRoomState } from "./components/structures/RoomView";
+import { type IRoomState } from "./components/structures/RoomView";
+import { type SettingKey } from "./settings/Settings.tsx";
 
 interface IDiff {
     isMemberEvent: boolean;
@@ -53,12 +54,27 @@ export default function shouldHideEvent(ev: MatrixEvent, ctx?: IRoomState): bool
     // so we should prefer using cached values if a RoomContext is available
     const isEnabled = ctx
         ? (name: keyof IRoomState) => ctx[name]
-        : (name: string) => SettingsStore.getValue(name, ev.getRoomId());
+        : (name: SettingKey) => SettingsStore.getValue(name, ev.getRoomId());
 
     // Hide redacted events
     // Deleted events with a thread are always shown regardless of user preference
     // to make sure that a thread can be accessible even if the root message is deleted
     if (ev.isRedacted() && !isEnabled("showRedactions") && !ev.getThread()) return true;
+
+    /**
+     * IBM CHANGES FOR BRANDING - DO NOT OVERWRITE
+     *
+     * START
+    */
+    // Visibility config of Member Events (incl. changes of displayname, avatar, invite/join/leave/kick/ban messages)
+    if (ev.getType() === 'm.room.member' && SettingsStore.getValue('ibm_showMemberEvents') === false) {
+        return true;
+    }
+    /**
+     * END
+     *
+     * IBM CHANGES FOR BRANDING - DO NOT OVERWRITE
+    */
 
     // Hide replacement events since they update the original tile (if enabled)
     if (ev.isRelation(RelationType.Replace)) return true;

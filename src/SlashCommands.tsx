@@ -5,14 +5,21 @@ Copyright 2019 Michael Telatynski <7t3chguy@gmail.com>
 Copyright 2018 New Vector Ltd
 Copyright 2015, 2016 OpenMarket Ltd
 
-SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only
+SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only OR LicenseRef-Element-Commercial
 Please see LICENSE files in the repository root for full details.
 */
 
 import * as React from "react";
-import { ContentHelpers, Direction, EventType, IContent, MRoomTopicEventContent, User } from "matrix-js-sdk/src/matrix";
+import {
+    ContentHelpers,
+    Direction,
+    EventType,
+    type IContent,
+    type MRoomTopicEventContent,
+    type User,
+} from "matrix-js-sdk/src/matrix";
 import { logger } from "matrix-js-sdk/src/logger";
-import { KnownMembership, RoomMemberEventContent } from "matrix-js-sdk/src/types";
+import { KnownMembership, type RoomMemberEventContent } from "matrix-js-sdk/src/types";
 
 import dis from "./dispatcher/dispatcher";
 import { _t, _td, UserFriendlyError } from "./languageHandler";
@@ -29,7 +36,7 @@ import { WidgetType } from "./widgets/WidgetType";
 import { Jitsi } from "./widgets/Jitsi";
 import BugReportDialog from "./components/views/dialogs/BugReportDialog";
 import { ensureDMExists } from "./createRoom";
-import { ViewUserPayload } from "./dispatcher/payloads/ViewUserPayload";
+import { type ViewUserPayload } from "./dispatcher/payloads/ViewUserPayload";
 import { Action } from "./dispatcher/actions";
 import SdkConfig from "./SdkConfig";
 import SettingsStore from "./settings/SettingsStore";
@@ -44,12 +51,11 @@ import InfoDialog from "./components/views/dialogs/InfoDialog";
 import SlashCommandHelpDialog from "./components/views/dialogs/SlashCommandHelpDialog";
 import { shouldShowComponent } from "./customisations/helpers/UIComponents";
 import { TimelineRenderingType } from "./contexts/RoomContext";
-import { ViewRoomPayload } from "./dispatcher/payloads/ViewRoomPayload";
+import { type ViewRoomPayload } from "./dispatcher/payloads/ViewRoomPayload";
 import VoipUserMapper from "./VoipUserMapper";
 import { htmlSerializeFromMdIfNeeded } from "./editor/serialize";
 import { leaveRoomBehaviour } from "./utils/leave-behaviour";
 import { MatrixClientPeg } from "./MatrixClientPeg";
-import { getDeviceCryptoInfo } from "./utils/crypto/deviceInfo";
 import { isCurrentLocalRoom, reject, singleMxcUpload, success, successSync } from "./slash-commands/utils";
 import { deop, op } from "./slash-commands/op";
 import { CommandCategories } from "./slash-commands/interface";
@@ -58,11 +64,18 @@ import { goto, join } from "./slash-commands/join";
 
 export { CommandCategories, Command };
 
+/**
+* IBM CHANGES FOR BRANDING - DO NOT OVERWRITE
+*
+* START
+*/
+
 export const Commands = [
     new Command({
         command: "spoiler",
         args: "<message>",
         description: _td("slash_command|spoiler"),
+        isEnabled: () => SettingsStore.getValue("ibm_enable_slashCommands_textEffects"),
         runFn: function (cli, roomId, threadId, message = "") {
             return successSync(ContentHelpers.makeHtmlMessage(message, `<span data-mx-spoiler>${message}</span>`));
         },
@@ -72,6 +85,7 @@ export const Commands = [
         command: "shrug",
         args: "<message>",
         description: _td("slash_command|shrug"),
+        isEnabled: () => SettingsStore.getValue("ibm_enable_slashCommands_textEffects"),
         runFn: function (cli, roomId, threadId, args) {
             let message = "¯\\_(ツ)_/¯";
             if (args) {
@@ -85,6 +99,7 @@ export const Commands = [
         command: "tableflip",
         args: "<message>",
         description: _td("slash_command|tableflip"),
+        isEnabled: () => SettingsStore.getValue("ibm_enable_slashCommands_textEffects"),
         runFn: function (cli, roomId, threadId, args) {
             let message = "(╯°□°）╯︵ ┻━┻";
             if (args) {
@@ -98,6 +113,7 @@ export const Commands = [
         command: "unflip",
         args: "<message>",
         description: _td("slash_command|unflip"),
+        isEnabled: () => SettingsStore.getValue("ibm_enable_slashCommands_textEffects"),
         runFn: function (cli, roomId, threadId, args) {
             let message = "┬──┬ ノ( ゜-゜ノ)";
             if (args) {
@@ -111,6 +127,7 @@ export const Commands = [
         command: "lenny",
         args: "<message>",
         description: _td("slash_command|lenny"),
+        isEnabled: () => SettingsStore.getValue("ibm_enable_slashCommands_textEffects"),
         runFn: function (cli, roomId, threadId, args) {
             let message = "( ͡° ͜ʖ ͡°)";
             if (args) {
@@ -124,6 +141,7 @@ export const Commands = [
         command: "plain",
         args: "<message>",
         description: _td("slash_command|plain"),
+        isEnabled: () => SettingsStore.getValue("ibm_enable_slashCommands_textEffects"),
         runFn: function (cli, roomId, threadId, messages = "") {
             return successSync(ContentHelpers.makeTextMessage(messages));
         },
@@ -133,6 +151,7 @@ export const Commands = [
         command: "html",
         args: "<message>",
         description: _td("slash_command|html"),
+        isEnabled: () => SettingsStore.getValue("ibm_enable_slashCommands_textEffects"),
         runFn: function (cli, roomId, threadId, messages = "") {
             return successSync(ContentHelpers.makeHtmlMessage(messages, messages));
         },
@@ -142,7 +161,7 @@ export const Commands = [
         command: "upgraderoom",
         args: "<new_version>",
         description: _td("slash_command|upgraderoom"),
-        isEnabled: (cli) => !isCurrentLocalRoom(cli) && SettingsStore.getValue("developerMode"),
+        isEnabled: (cli) => !isCurrentLocalRoom(cli) && SettingsStore.getValue("ibm_enable_slashCommands_upgradeRoom"),
         runFn: function (cli, roomId, threadId, args) {
             if (args) {
                 const room = cli.getRoom(roomId);
@@ -215,6 +234,7 @@ export const Commands = [
         command: "nick",
         args: "<display_name>",
         description: _td("slash_command|nick"),
+        isEnabled: () => SettingsStore.getValue("ibm_enable_slashCommands_selfNickAvatar"),
         runFn: function (cli, roomId, threadId, args) {
             if (args) {
                 return success(cli.setDisplayName(args));
@@ -229,7 +249,7 @@ export const Commands = [
         aliases: ["roomnick"],
         args: "<display_name>",
         description: _td("slash_command|myroomnick"),
-        isEnabled: (cli) => !isCurrentLocalRoom(cli),
+        isEnabled: (cli) => !isCurrentLocalRoom(cli) && SettingsStore.getValue("ibm_enable_slashCommands_selfNickAvatar"),
         runFn: function (cli, roomId, threadId, args) {
             if (args) {
                 const ev = cli.getRoom(roomId)?.currentState.getStateEvents(EventType.RoomMember, cli.getSafeUserId());
@@ -248,7 +268,7 @@ export const Commands = [
         command: "roomavatar",
         args: "[<mxc_url>]",
         description: _td("slash_command|roomavatar"),
-        isEnabled: (cli) => !isCurrentLocalRoom(cli),
+        isEnabled: (cli) => !isCurrentLocalRoom(cli) && SettingsStore.getValue("ibm_enable_slashCommands_roomProperties"),
         runFn: function (cli, roomId, threadId, args) {
             let promise = Promise.resolve(args ?? null);
             if (!args) {
@@ -269,7 +289,7 @@ export const Commands = [
         command: "myroomavatar",
         args: "[<mxc_url>]",
         description: _td("slash_command|myroomavatar"),
-        isEnabled: (cli) => !isCurrentLocalRoom(cli),
+        isEnabled: (cli) => !isCurrentLocalRoom(cli) && SettingsStore.getValue("ibm_enable_slashCommands_selfNickAvatar"),
         runFn: function (cli, roomId, threadId, args) {
             const room = cli.getRoom(roomId);
             const userId = cli.getSafeUserId();
@@ -298,6 +318,7 @@ export const Commands = [
         command: "myavatar",
         args: "[<mxc_url>]",
         description: _td("slash_command|myavatar"),
+        isEnabled: () => SettingsStore.getValue("ibm_enable_slashCommands_selfNickAvatar"),
         runFn: function (cli, roomId, threadId, args) {
             let promise = Promise.resolve(args ?? null);
             if (!args) {
@@ -318,7 +339,7 @@ export const Commands = [
         command: "topic",
         args: "[<topic>]",
         description: _td("slash_command|topic"),
-        isEnabled: (cli) => !isCurrentLocalRoom(cli),
+        isEnabled: (cli) => !isCurrentLocalRoom(cli) && SettingsStore.getValue("ibm_enable_slashCommands_roomProperties"),
         runFn: function (cli, roomId, threadId, args) {
             if (args) {
                 const html = htmlSerializeFromMdIfNeeded(args, { forceHTML: false });
@@ -356,7 +377,7 @@ export const Commands = [
         command: "roomname",
         args: "<name>",
         description: _td("slash_command|roomname"),
-        isEnabled: (cli) => !isCurrentLocalRoom(cli),
+        isEnabled: (cli) => !isCurrentLocalRoom(cli) && SettingsStore.getValue("ibm_enable_slashCommands_roomProperties"),
         runFn: function (cli, roomId, threadId, args) {
             if (args) {
                 return success(cli.setRoomName(roomId, args));
@@ -371,7 +392,7 @@ export const Commands = [
         args: "<user-id> [<reason>]",
         description: _td("slash_command|invite"),
         analyticsName: "Invite",
-        isEnabled: (cli) => !isCurrentLocalRoom(cli) && shouldShowComponent(UIComponent.InviteUsers),
+        isEnabled: (cli) => !isCurrentLocalRoom(cli) && shouldShowComponent(UIComponent.InviteUsers) && SettingsStore.getValue("ibm_enable_slashCommands_userManagement"),
         runFn: function (cli, roomId, threadId, args) {
             if (args) {
                 const [address, reason] = args.split(/\s+(.+)/);
@@ -436,14 +457,14 @@ export const Commands = [
         category: CommandCategories.actions,
         renderingTypes: [TimelineRenderingType.Room],
     }),
-    goto,
-    join,
+    ...SettingsStore.getValue("ibm_enable_slashCommands_shortcuts") ? [goto] : [],
+    ...SettingsStore.getValue("ibm_enable_slashCommands_joinLeave") ? [join] : [],
     new Command({
         command: "part",
         args: "[<room-address>]",
         description: _td("action|leave_room"),
         analyticsName: "Part",
-        isEnabled: (cli) => !isCurrentLocalRoom(cli),
+        isEnabled: (cli) => !isCurrentLocalRoom(cli) && SettingsStore.getValue("ibm_enable_slashCommands_joinLeave"),
         runFn: function (cli, roomId, threadId, args) {
             let targetRoomId: string | undefined;
             if (args) {
@@ -483,7 +504,7 @@ export const Commands = [
         aliases: ["kick"],
         args: "<user-id> [reason]",
         description: _td("slash_command|remove"),
-        isEnabled: (cli) => !isCurrentLocalRoom(cli),
+        isEnabled: (cli) => !isCurrentLocalRoom(cli) && SettingsStore.getValue("ibm_enable_slashCommands_userManagement"),
         runFn: function (cli, roomId, threadId, args) {
             if (args) {
                 const matches = args.match(/^(\S+?)( +(.*))?$/);
@@ -500,7 +521,7 @@ export const Commands = [
         command: "ban",
         args: "<user-id> [reason]",
         description: _td("slash_command|ban"),
-        isEnabled: (cli) => !isCurrentLocalRoom(cli),
+        isEnabled: (cli) => !isCurrentLocalRoom(cli) && SettingsStore.getValue("ibm_enable_slashCommands_ban"),
         runFn: function (cli, roomId, threadId, args) {
             if (args) {
                 const matches = args.match(/^(\S+?)( +(.*))?$/);
@@ -517,7 +538,7 @@ export const Commands = [
         command: "unban",
         args: "<user-id>",
         description: _td("slash_command|unban"),
-        isEnabled: (cli) => !isCurrentLocalRoom(cli),
+        isEnabled: (cli) => !isCurrentLocalRoom(cli) && SettingsStore.getValue("ibm_enable_slashCommands_ban"),
         runFn: function (cli, roomId, threadId, args) {
             if (args) {
                 const matches = args.match(/^(\S+)$/);
@@ -535,6 +556,7 @@ export const Commands = [
         command: "ignore",
         args: "<user-id>",
         description: _td("slash_command|ignore"),
+        isEnabled: () => SettingsStore.getValue("ibm_enable_slashCommands_ignore"),
         runFn: function (cli, roomId, threadId, args) {
             if (args) {
                 const matches = args.match(/^(@[^:]+:\S+)$/);
@@ -564,6 +586,7 @@ export const Commands = [
         command: "unignore",
         args: "<user-id>",
         description: _td("slash_command|unignore"),
+        isEnabled: () => SettingsStore.getValue("ibm_enable_slashCommands_ignore"),
         runFn: function (cli, roomId, threadId, args) {
             if (args) {
                 const matches = args.match(/(^@[^:]+:\S+$)/);
@@ -590,11 +613,12 @@ export const Commands = [
         },
         category: CommandCategories.actions,
     }),
-    op,
-    deop,
+    ...SettingsStore.getValue("ibm_enable_slashCommands_userManagement") ? [op] : [],
+    ...SettingsStore.getValue("ibm_enable_slashCommands_userManagement") ? [deop] : [],
     new Command({
         command: "devtools",
         description: _td("slash_command|devtools"),
+        isEnabled: () => SettingsStore.getValue("ibm_enable_slashCommands_devTools"),
         runFn: function (cli, roomId, threadRootId) {
             Modal.createDialog(DevtoolsDialog, { roomId, threadRootId }, "mx_DevtoolsDialog_wrapper");
             return success();
@@ -659,72 +683,9 @@ export const Commands = [
         renderingTypes: [TimelineRenderingType.Room],
     }),
     new Command({
-        command: "verify",
-        args: "<user-id> <device-id> <device-signing-key>",
-        description: _td("slash_command|verify"),
-        runFn: function (cli, roomId, threadId, args) {
-            if (args) {
-                const matches = args.match(/^(\S+) +(\S+) +(\S+)$/);
-                if (matches) {
-                    const userId = matches[1];
-                    const deviceId = matches[2];
-                    const fingerprint = matches[3];
-
-                    return success(
-                        (async (): Promise<void> => {
-                            const device = await getDeviceCryptoInfo(cli, userId, deviceId);
-                            if (!device) {
-                                throw new UserFriendlyError("slash_command|verify_unknown_pair", {
-                                    userId,
-                                    deviceId,
-                                    cause: undefined,
-                                });
-                            }
-                            const deviceTrust = await cli.getCrypto()?.getDeviceVerificationStatus(userId, deviceId);
-
-                            if (deviceTrust?.isVerified()) {
-                                if (device.getFingerprint() === fingerprint) {
-                                    throw new UserFriendlyError("slash_command|verify_nop");
-                                } else {
-                                    throw new UserFriendlyError("slash_command|verify_nop_warning_mismatch");
-                                }
-                            }
-
-                            if (device.getFingerprint() !== fingerprint) {
-                                const fprint = device.getFingerprint();
-                                throw new UserFriendlyError("slash_command|verify_mismatch", {
-                                    fprint,
-                                    userId,
-                                    deviceId,
-                                    fingerprint,
-                                    cause: undefined,
-                                });
-                            }
-
-                            await cli.setDeviceVerified(userId, deviceId, true);
-
-                            // Tell the user we verified everything
-                            Modal.createDialog(InfoDialog, {
-                                title: _t("slash_command|verify_success_title"),
-                                description: (
-                                    <div>
-                                        <p>{_t("slash_command|verify_success_description", { userId, deviceId })}</p>
-                                    </div>
-                                ),
-                            });
-                        })(),
-                    );
-                }
-            }
-            return reject(this.getUsage());
-        },
-        category: CommandCategories.advanced,
-        renderingTypes: [TimelineRenderingType.Room],
-    }),
-    new Command({
         command: "discardsession",
         description: _td("slash_command|discardsession"),
-        isEnabled: (cli) => !isCurrentLocalRoom(cli),
+        isEnabled: (cli) => !isCurrentLocalRoom(cli) && SettingsStore.getValue("UIFeature.voip"),
         runFn: function (cli, roomId) {
             try {
                 cli.getCrypto()?.forceDiscardSession(roomId);
@@ -739,6 +700,7 @@ export const Commands = [
     new Command({
         command: "rainbow",
         description: _td("slash_command|rainbow"),
+        isEnabled: () => SettingsStore.getValue("ibm_enable_slashCommands_textEffects"),
         args: "<message>",
         runFn: function (cli, roomId, threadId, args) {
             if (!args) return reject(this.getUsage());
@@ -749,6 +711,7 @@ export const Commands = [
     new Command({
         command: "rainbowme",
         description: _td("slash_command|rainbowme"),
+        isEnabled: () => SettingsStore.getValue("ibm_enable_slashCommands_textEffects"),
         args: "<message>",
         runFn: function (cli, roomId, threadId, args) {
             if (!args) return reject(this.getUsage());
@@ -759,6 +722,7 @@ export const Commands = [
     new Command({
         command: "help",
         description: _td("slash_command|help"),
+        isEnabled: () => SettingsStore.getValue("ibm_enable_slashCommands_help"),
         runFn: function () {
             Modal.createDialog(SlashCommandHelpDialog);
             return success();
@@ -768,8 +732,8 @@ export const Commands = [
     new Command({
         command: "whois",
         description: _td("slash_command|whois"),
+        isEnabled: (cli) => !isCurrentLocalRoom(cli) && SettingsStore.getValue("ibm_enable_slashCommands_shortcuts"),
         args: "<user-id>",
-        isEnabled: (cli) => !isCurrentLocalRoom(cli),
         runFn: function (cli, roomId, threadId, userId) {
             if (!userId || !userId.startsWith("@") || !userId.includes(":")) {
                 return reject(this.getUsage());
@@ -825,6 +789,7 @@ export const Commands = [
     new Command({
         command: "query",
         description: _td("slash_command|query"),
+        isEnabled: () => SettingsStore.getValue("ibm_enable_slashCommands_shortcuts"),
         args: "<user-id>",
         runFn: function (cli, roomId, threadId, userId) {
             // easter-egg for now: look up phone numbers through the thirdparty API
@@ -861,6 +826,7 @@ export const Commands = [
     new Command({
         command: "msg",
         description: _td("slash_command|msg"),
+        isEnabled: () => SettingsStore.getValue("ibm_enable_slashCommands_shortcuts"),
         args: "<user-id> [<message>]",
         runFn: function (cli, roomId, threadId, args) {
             if (args) {
@@ -897,7 +863,7 @@ export const Commands = [
         command: "holdcall",
         description: _td("slash_command|holdcall"),
         category: CommandCategories.other,
-        isEnabled: (cli) => !isCurrentLocalRoom(cli),
+        isEnabled: (cli) => !isCurrentLocalRoom(cli) && SettingsStore.getValue("UIFeature.voip"),
         runFn: function (cli, roomId, threadId, args) {
             const call = LegacyCallHandler.instance.getCallForRoom(roomId);
             if (!call) {
@@ -912,7 +878,7 @@ export const Commands = [
         command: "unholdcall",
         description: _td("slash_command|unholdcall"),
         category: CommandCategories.other,
-        isEnabled: (cli) => !isCurrentLocalRoom(cli),
+        isEnabled: (cli) => !isCurrentLocalRoom(cli) && SettingsStore.getValue("UIFeature.voip"),
         runFn: function (cli, roomId, threadId, args) {
             const call = LegacyCallHandler.instance.getCallForRoom(roomId);
             if (!call) {
@@ -927,7 +893,7 @@ export const Commands = [
         command: "converttodm",
         description: _td("slash_command|converttodm"),
         category: CommandCategories.other,
-        isEnabled: (cli) => !isCurrentLocalRoom(cli),
+        isEnabled: (cli) => !isCurrentLocalRoom(cli) && SettingsStore.getValue("ibm_enable_slashCommands_convertRooms"),
         runFn: function (cli, roomId, threadId, args) {
             const room = cli.getRoom(roomId);
             if (!room) return reject(new UserFriendlyError("slash_command|could_not_find_room"));
@@ -939,7 +905,7 @@ export const Commands = [
         command: "converttoroom",
         description: _td("slash_command|converttoroom"),
         category: CommandCategories.other,
-        isEnabled: (cli) => !isCurrentLocalRoom(cli),
+        isEnabled: (cli) => !isCurrentLocalRoom(cli) && SettingsStore.getValue("ibm_enable_slashCommands_convertRooms"),
         runFn: function (cli, roomId, threadId, args) {
             const room = cli.getRoom(roomId);
             if (!room) return reject(new UserFriendlyError("slash_command|could_not_find_room"));
@@ -954,6 +920,7 @@ export const Commands = [
         command: "me",
         args: "<message>",
         description: _td("slash_command|me"),
+        isEnabled: () => SettingsStore.getValue("ibm_enable_slashCommands_textEffects"),
         category: CommandCategories.messages,
         hideCompletionAfterSpace: true,
     }),
@@ -981,6 +948,12 @@ export const Commands = [
         });
     }),
 ];
+
+/**
+* END
+*
+* IBM CHANGES FOR BRANDING - DO NOT OVERWRITE
+*/
 
 // build a map from names and aliases to the Command objects.
 export const CommandMap = new Map<string, Command>();

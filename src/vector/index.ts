@@ -6,7 +6,7 @@ Copyright 2018, 2019 New Vector Ltd
 Copyright 2017 Vector Creations Ltd
 Copyright 2015, 2016 OpenMarket Ltd
 
-SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only
+SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only OR LicenseRef-Element-Commercial
 Please see LICENSE files in the repository root for full details.
 */
 
@@ -67,6 +67,10 @@ function checkBrowserFeatures(): boolean {
     // although this would start to make (more) assumptions about how rust-crypto loads its wasm.
     window.Modernizr.addTest("wasm", () => typeof WebAssembly === "object" && typeof WebAssembly.Module === "function");
 
+    // Check that the session is in a secure context otherwise most Crypto & WebRTC APIs will be unavailable
+    // https://developer.mozilla.org/en-US/docs/Web/API/Window/isSecureContext
+    window.Modernizr.addTest("securecontext", () => window.isSecureContext);
+
     const featureList = Object.keys(window.Modernizr) as Array<keyof ModernizrStatic>;
 
     let featureComplete = true;
@@ -110,6 +114,7 @@ async function start(): Promise<void> {
         loadTheme,
         loadApp,
         loadModules,
+        loadPlugins,
         showError,
         showIncompatibleBrowser,
         _t,
@@ -132,18 +137,24 @@ async function start(): Promise<void> {
         // verifying a 3pid (but after we've loaded the config)
         // or if the user is following a deep link
         // (https://github.com/element-hq/element-web/issues/7378)
-        const preventRedirect = fragparts.params.client_secret || fragparts.location.length > 0;
-
-        if (!preventRedirect) {
-            const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-            const isAndroid = /Android/.test(navigator.userAgent);
-            if (isIos || isAndroid) {
-                if (document.cookie.indexOf("element_mobile_redirect_to_guide=false") === -1) {
-                    window.location.href = "mobile_guide/";
-                    return;
-                }
-            }
-        }
+        /**
+        * IBM CHANGES FOR BRANDING - DO NOT OVERWRITE
+        *
+        * START
+        */
+        // const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        // const isAndroid = /Android/.test(navigator.userAgent);
+        // if (isIos || isAndroid) {
+        //     if (document.cookie.indexOf("element_mobile_redirect_to_guide=false") === -1) {
+        //         window.location.href = "mobile_guide/";
+        //         return;
+        //     }
+        // }
+        /**
+        * END
+        *
+        * IBM CHANGES FOR BRANDING - DO NOT OVERWRITE
+        */
 
         // set the platform for react sdk
         preparePlatform();
@@ -155,10 +166,12 @@ async function start(): Promise<void> {
         // now that the config is ready, try to persist logs
         const persistLogsPromise = setupLogStorage();
 
-        // Load modules before language to ensure any custom translations are respected, and any app
+        // Load modules & plugins before language to ensure any custom translations are respected, and any app
         // startup functionality is run
         const loadModulesPromise = loadModules();
         await settled(loadModulesPromise);
+        const loadPluginsPromise = loadPlugins();
+        await settled(loadPluginsPromise);
 
         // Load language after loading config.json so that settingsDefaults.language can be applied
         const loadLanguagePromise = loadLanguage();
@@ -211,6 +224,7 @@ async function start(): Promise<void> {
         // app load critical path starts here
         // assert things started successfully
         // ##################################
+        await loadPluginsPromise;
         await loadModulesPromise;
         await loadThemePromise;
         await loadLanguagePromise;

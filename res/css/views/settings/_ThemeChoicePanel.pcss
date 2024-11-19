@@ -2,7 +2,7 @@
 Copyright 2024 New Vector Ltd.
 Copyright 2021 The Matrix.org Foundation C.I.C.
 
-SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only
+SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only OR LicenseRef-Element-Commercial
 Please see LICENSE files in the repository root for full details.
 */
 
@@ -14,15 +14,17 @@ Please see LICENSE files in the repository root for full details.
     gap: var(--cpd-space-4x) !important;
 
     .mx_ThemeChoicePanel_themeSelector {
-        border: 1px solid var(--cpd-color-border-interactive-secondary);
+/** IBM CHANGES FOR BRANDING - DO NOT OVERWRITE - START **/
+        border: 1px solid var(--accent-color);
         border-radius: var(--cpd-space-1-5x);
         padding: var(--cpd-space-3x) var(--cpd-space-5x) var(--cpd-space-3x) var(--cpd-space-3x);
         gap: var(--cpd-space-2x);
         background-color: var(--cpd-color-bg-canvas-default);
 
         &.mx_ThemeChoicePanel_themeSelector_enabled {
-            border-color: var(--cpd-color-border-interactive-primary);
+            border-color: var(--accent-color);
         }
+/** IBM CHANGES FOR BRANDING - DO NOT OVERWRITE - END **/
 
         &.mx_ThemeChoicePanel_themeSelector_disabled {
             border-color: var(--cpd-color-border-disabled);

@@ -2,7 +2,7 @@
 Copyright 2024 New Vector Ltd.
 Copyright 2022 The Matrix.org Foundation C.I.C.
 
-SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only
+SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only OR LicenseRef-Element-Commercial
 Please see LICENSE files in the repository root for full details.
 */
 
@@ -11,29 +11,29 @@ import {
     act,
     fireEvent,
     render,
-    RenderResult,
+    type RenderResult,
     screen,
     waitFor,
     waitForElementToBeRemoved,
     within,
 } from "jest-matrix-react";
 import { logger } from "matrix-js-sdk/src/logger";
-import { CryptoApi, DeviceVerificationStatus, VerificationRequest } from "matrix-js-sdk/src/crypto-api";
+import { type CryptoApi, DeviceVerificationStatus, type VerificationRequest } from "matrix-js-sdk/src/crypto-api";
 import { defer, sleep } from "matrix-js-sdk/src/utils";
 import {
     ClientEvent,
     Device,
-    IMyDevice,
+    type IMyDevice,
     LOCAL_NOTIFICATION_SETTINGS_PREFIX,
     MatrixEvent,
     PUSHER_DEVICE_ID,
     PUSHER_ENABLED,
-    IAuthData,
+    type IAuthData,
     GET_LOGIN_TOKEN_CAPABILITY,
     MatrixError,
-    MatrixClient,
+    type MatrixClient,
 } from "matrix-js-sdk/src/matrix";
-import { mocked, MockedObject } from "jest-mock";
+import { mocked, type MockedObject } from "jest-mock";
 import fetchMock from "fetch-mock-jest";
 
 import {
@@ -50,14 +50,14 @@ import Modal from "../../../../../../../src/Modal";
 import LogoutDialog from "../../../../../../../src/components/views/dialogs/LogoutDialog";
 import {
     DeviceSecurityVariation,
-    ExtendedDevice,
+    type ExtendedDevice,
 } from "../../../../../../../src/components/views/settings/devices/types";
 import { INACTIVE_DEVICE_AGE_MS } from "../../../../../../../src/components/views/settings/devices/filter";
 import SettingsStore from "../../../../../../../src/settings/SettingsStore";
 import { getClientInformationEventType } from "../../../../../../../src/utils/device/clientInformation";
 import { SDKContext, SdkContextClass } from "../../../../../../../src/contexts/SDKContext";
-import { OidcClientStore } from "../../../../../../../src/stores/oidc/OidcClientStore";
-import { mockOpenIdConfiguration } from "../../../../../../test-utils/oidc";
+import { type OidcClientStore } from "../../../../../../../src/stores/oidc/OidcClientStore";
+import { makeDelegatedAuthConfig } from "../../../../../../test-utils/oidc";
 import MatrixClientContext from "../../../../../../../src/contexts/MatrixClientContext";
 
 mockPlatformPeg();
@@ -119,6 +119,7 @@ describe("<SessionManagerTab />", () => {
     const mockVerificationRequest = {
         cancel: jest.fn(),
         on: jest.fn(),
+        off: jest.fn(),
     } as unknown as VerificationRequest;
 
     const mockCrypto = mocked({
@@ -214,7 +215,7 @@ describe("<SessionManagerTab />", () => {
             getPushers: jest.fn(),
             setPusher: jest.fn(),
             setLocalNotificationSettings: jest.fn(),
-            getAuthIssuer: jest.fn().mockReturnValue(new Promise(() => {})),
+            getAuthMetadata: jest.fn().mockRejectedValue(new MatrixError({ errcode: "M_UNRECOGNIZED" }, 404)),
         });
         jest.clearAllMocks();
         jest.spyOn(logger, "error").mockRestore();
@@ -262,6 +263,7 @@ describe("<SessionManagerTab />", () => {
     });
 
     afterAll(() => {
+        // @ts-expect-error
         window.location = realWindowLocation;
     });
 
@@ -276,9 +278,7 @@ describe("<SessionManagerTab />", () => {
         mockClient.getDevices.mockRejectedValue({ httpStatus: 404 });
         const { container } = render(getComponent());
 
-        await act(async () => {
-            await flushPromises();
-        });
+        await flushPromises();
         expect(container.getElementsByClassName("mx_Spinner").length).toBeFalsy();
     });
 
@@ -301,9 +301,7 @@ describe("<SessionManagerTab />", () => {
 
         const { getByTestId } = render(getComponent());
 
-        await act(async () => {
-            await flushPromises();
-        });
+        await flushPromises();
 
         expect(mockCrypto.getDeviceVerificationStatus).toHaveBeenCalledTimes(3);
         expect(
@@ -336,9 +334,7 @@ describe("<SessionManagerTab />", () => {
 
         const { getByTestId } = render(getComponent());
 
-        await act(async () => {
-            await flushPromises();
-        });
+        await flushPromises();
 
         // twice for each device
         expect(mockClient.getAccountData).toHaveBeenCalledTimes(4);
@@ -355,9 +351,7 @@ describe("<SessionManagerTab />", () => {
 
         const { getByTestId, queryByTestId } = render(getComponent());
 
-        await act(async () => {
-            await flushPromises();
-        });
+        await flushPromises();
 
         toggleDeviceDetails(getByTestId, alicesDevice.device_id);
         // application metadata section not rendered
@@ -368,9 +362,7 @@ describe("<SessionManagerTab />", () => {
         mockClient.getDevices.mockResolvedValue({ devices: [alicesDevice] });
         const { queryByTestId } = render(getComponent());
 
-        await act(async () => {
-            await flushPromises();
-        });
+        await flushPromises();
 
         expect(queryByTestId("other-sessions-section")).toBeFalsy();
     });
@@ -381,9 +373,7 @@ describe("<SessionManagerTab />", () => {
         });
         const { getByTestId } = render(getComponent());
 
-        await act(async () => {
-            await flushPromises();
-        });
+        await flushPromises();
 
         expect(getByTestId("other-sessions-section")).toBeTruthy();
     });
@@ -394,9 +384,7 @@ describe("<SessionManagerTab />", () => {
         });
         const { getByTestId, container } = render(getComponent());
 
-        await act(async () => {
-            await flushPromises();
-        });
+        await flushPromises();
 
         fireEvent.click(getByTestId("unverified-devices-cta"));
 
@@ -907,7 +895,8 @@ describe("<SessionManagerTab />", () => {
             });
 
             it("deletes a device when interactive auth is not required", async () => {
-                mockClient.deleteMultipleDevices.mockResolvedValue({});
+                const deferredDeleteMultipleDevices = defer<{}>();
+                mockClient.deleteMultipleDevices.mockReturnValue(deferredDeleteMultipleDevices.promise);
                 mockClient.getDevices.mockResolvedValue({
                     devices: [alicesDevice, alicesMobileDevice, alicesOlderMobileDevice],
                 });
@@ -932,6 +921,7 @@ describe("<SessionManagerTab />", () => {
                 fireEvent.click(signOutButton);
                 await confirmSignout(getByTestId);
                 await prom;
+                deferredDeleteMultipleDevices.resolve({});
 
                 // delete called
                 expect(mockClient.deleteMultipleDevices).toHaveBeenCalledWith(
@@ -990,7 +980,7 @@ describe("<SessionManagerTab />", () => {
 
                 const { getByTestId, getByLabelText } = render(getComponent());
 
-                await act(flushPromises);
+                await flushPromises();
 
                 // reset mock count after initial load
                 mockClient.getDevices.mockClear();
@@ -1024,7 +1014,7 @@ describe("<SessionManagerTab />", () => {
                     fireEvent.submit(getByLabelText("Password"));
                 });
 
-                await act(flushPromises);
+                await flushPromises();
 
                 // called again with auth
                 expect(mockClient.deleteMultipleDevices).toHaveBeenCalledWith([alicesMobileDevice.device_id], {
@@ -1115,8 +1105,9 @@ describe("<SessionManagerTab />", () => {
                 // because promise flushing after the confirm modal is resolving this too
                 // and we want to test the loading state here
                 const resolveDeleteRequest = defer<IAuthData>();
-                mockClient.deleteMultipleDevices.mockImplementation(() => {
-                    return resolveDeleteRequest.promise;
+                mockClient.deleteMultipleDevices.mockImplementation(async () => {
+                    await resolveDeleteRequest.promise;
+                    return {};
                 });
 
                 const { getByTestId } = render(getComponent());
@@ -1245,34 +1236,13 @@ describe("<SessionManagerTab />", () => {
                     toggleDeviceDetails(getByTestId, alicesMobileDevice.device_id);
 
                     const deviceDetails = getByTestId(`device-detail-${alicesMobileDevice.device_id}`);
-                    const signOutButton = deviceDetails.querySelector(
+                    const manageDeviceButton = deviceDetails.querySelector(
                         '[data-testid="device-detail-sign-out-cta"]',
                     ) as Element;
-                    fireEvent.click(signOutButton);
-
-                    await screen.findByRole("dialog");
-                    expect(
-                        screen.getByText(
-                            "You will be redirected to your server's authentication provider to complete sign out.",
-                        ),
-                    ).toBeInTheDocument();
-                    // correct link to auth provider
-                    expect(screen.getByText("Continue")).toHaveAttribute(
+                    expect(manageDeviceButton).toHaveAttribute(
                         "href",
-                        `https://issuer.org/account?action=session_end&device_id=${alicesMobileDevice.device_id}`,
+                        `https://issuer.org/account?action=org.matrix.session_view&device_id=${alicesMobileDevice.device_id}`,
                     );
-
-                    // go to the link
-                    fireEvent.click(screen.getByText("Continue"));
-                    await flushPromises();
-
-                    // come back from the link and close the modal
-                    fireEvent.click(screen.getByText("Close"));
-
-                    await flushPromises();
-
-                    // devices were refreshed
-                    expect(mockClient.getDevices).toHaveBeenCalled();
                 });
 
                 it("does not allow removing multiple devices at once", async () => {
@@ -1550,7 +1520,7 @@ describe("<SessionManagerTab />", () => {
                 });
                 const { getByTestId, container } = render(getComponent());
 
-                await act(flushPromises);
+                await flushPromises();
 
                 // filter for inactive sessions
                 await setFilter(container, DeviceSecurityVariation.Inactive);
@@ -1576,9 +1546,7 @@ describe("<SessionManagerTab />", () => {
     it("lets you change the pusher state", async () => {
         const { getByTestId } = render(getComponent());
 
-        await act(async () => {
-            await flushPromises();
-        });
+        await flushPromises();
 
         toggleDeviceDetails(getByTestId, alicesMobileDevice.device_id);
 
@@ -1597,9 +1565,7 @@ describe("<SessionManagerTab />", () => {
     it("lets you change the local notification settings state", async () => {
         const { getByTestId } = render(getComponent());
 
-        await act(async () => {
-            await flushPromises();
-        });
+        await flushPromises();
 
         toggleDeviceDetails(getByTestId, alicesDevice.device_id);
 
@@ -1620,9 +1586,7 @@ describe("<SessionManagerTab />", () => {
     it("updates the UI when another session changes the local notifications", async () => {
         const { getByTestId } = render(getComponent());
 
-        await act(async () => {
-            await flushPromises();
-        });
+        await flushPromises();
 
         toggleDeviceDetails(getByTestId, alicesDevice.device_id);
 
@@ -1653,7 +1617,6 @@ describe("<SessionManagerTab />", () => {
     describe("MSC4108 QR code login", () => {
         const settingsValueSpy = jest.spyOn(SettingsStore, "getValue");
         const issuer = "https://issuer.org";
-        const openIdConfiguration = mockOpenIdConfiguration(issuer);
 
         beforeEach(() => {
             settingsValueSpy.mockClear().mockReturnValue(true);
@@ -1669,16 +1632,16 @@ describe("<SessionManagerTab />", () => {
                     enabled: true,
                 },
             });
-            mockClient.getAuthIssuer.mockResolvedValue({ issuer });
-            mockCrypto.exportSecretsBundle = jest.fn();
-            fetchMock.mock(`${issuer}/.well-known/openid-configuration`, {
-                ...openIdConfiguration,
+            const delegatedAuthConfig = makeDelegatedAuthConfig(issuer);
+            mockClient.getAuthMetadata.mockResolvedValue({
+                ...delegatedAuthConfig,
                 grant_types_supported: [
-                    ...openIdConfiguration.grant_types_supported,
+                    ...delegatedAuthConfig.grant_types_supported,
                     "urn:ietf:params:oauth:grant-type:device_code",
                 ],
             });
-            fetchMock.mock(openIdConfiguration.jwks_uri!, {
+            mockCrypto.exportSecretsBundle = jest.fn();
+            fetchMock.mock(delegatedAuthConfig.jwks_uri!, {
                 status: 200,
                 headers: {
                     "Content-Type": "application/json",

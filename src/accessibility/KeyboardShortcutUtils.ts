@@ -2,11 +2,11 @@
 Copyright 2024 New Vector Ltd.
 Copyright 2022 Šimon Brandner <simon.bra.ag@gmail.com>
 
-SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only
+SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only OR LicenseRef-Element-Commercial
 Please see LICENSE files in the repository root for full details.
 */
 
-import { KeyCombo } from "../KeyBindingsManager";
+import { type KeyCombo } from "../KeyBindingsManager";
 import { IS_MAC, Key } from "../Keyboard";
 import { _t, _td } from "../languageHandler";
 import PlatformPeg from "../PlatformPeg";
@@ -14,10 +14,10 @@ import SettingsStore from "../settings/SettingsStore";
 import {
     DESKTOP_SHORTCUTS,
     DIGITS,
-    IKeyboardShortcuts,
+    type IKeyboardShortcuts,
     KeyBindingAction,
     KEYBOARD_SHORTCUTS,
-    KeyboardShortcutSetting,
+    type KeyboardShortcutSetting,
     MAC_ONLY_SHORTCUTS,
 } from "./KeyboardShortcuts";
 
@@ -56,14 +56,27 @@ const getUIOnlyShortcuts = (): IKeyboardShortcuts => {
             },
             displayName: _td("keyboard|autocomplete_force"),
         },
-        [KeyBindingAction.SearchInRoom]: {
-            default: {
-                ctrlOrCmdKey: true,
-                key: Key.F,
-            },
-            displayName: _td("keyboard|search"),
-        },
-    };
+        /**
+        * IBM CHANGES FOR BRANDING - DO NOT OVERWRITE
+        *
+        * START
+        */
+            };
+
+            if (SettingsStore.getValue("ibm_enableSearch")) {
+                keyboardShortcuts[KeyBindingAction.SearchInRoom] = {
+                    default: {
+                        ctrlOrCmdKey: true,
+                        key: Key.F,
+                    },
+                    displayName: _td("keyboard|search"),
+                }
+            };
+        /**
+        * END
+        *
+        * IBM CHANGES FOR BRANDING - DO NOT OVERWRITE
+        */
 
     if (PlatformPeg.get()?.overrideBrowserShortcuts()) {
         // XXX: This keyboard shortcut isn't manually added to

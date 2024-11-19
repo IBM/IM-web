@@ -1,11 +1,11 @@
 /*
 Copyright 2021-2024 New Vector Ltd.
 
-SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only
+SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only OR LicenseRef-Element-Commercial
 Please see LICENSE files in the repository root for full details.
 */
 
-import React, { CSSProperties } from "react";
+import React, { type CSSProperties } from "react";
 
 interface IProps {
     backgroundImage?: string;
@@ -27,8 +27,23 @@ export const BackdropPanel: React.FC<IProps> = ({ backgroundImage, blurMultiplie
     }
     return (
         <div className="mx_BackdropPanel">
-            <img role="presentation" alt="" style={styles} className="mx_BackdropPanel--image" src={backgroundImage} />
+            {
+            /**
+             * IBM CHANGES FOR BRANDING - DO NOT OVERWRITE
+             *
+             * START
+             */
+            /*
+             <img
+            style={styles}
+            className="mx_BackdropPanel--image"
+            src={backgroundImage} /> */
+            /**
+             * END
+             *
+             * IBM CHANGES FOR BRANDING - DO NOT OVERWRITE
+             */
+             }
         </div>
     );
 };
-export default BackdropPanel;

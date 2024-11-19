@@ -2,24 +2,25 @@
 Copyright 2024 New Vector Ltd.
 Copyright 2021 The Matrix.org Foundation C.I.C.
 
-SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only
+SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only OR LicenseRef-Element-Commercial
 Please see LICENSE files in the repository root for full details.
 */
 
 import React, { useCallback, useEffect } from "react";
-import { MatrixEvent } from "matrix-js-sdk/src/matrix";
+import { type MatrixEvent } from "matrix-js-sdk/src/matrix";
 
-import { ButtonEvent } from "../elements/AccessibleButton";
+import { type ButtonEvent } from "../elements/AccessibleButton";
 import dis from "../../../dispatcher/dispatcher";
 import { Action } from "../../../dispatcher/actions";
-import { RoomPermalinkCreator } from "../../../utils/permalinks/Permalinks";
+import { type RoomPermalinkCreator } from "../../../utils/permalinks/Permalinks";
 import { copyPlaintext } from "../../../utils/strings";
-import { ChevronFace, ContextMenuTooltipButton, MenuProps, useContextMenu } from "../../structures/ContextMenu";
+import { ChevronFace, ContextMenuTooltipButton, type MenuProps, useContextMenu } from "../../structures/ContextMenu";
 import { _t } from "../../../languageHandler";
 import IconizedContextMenu, { IconizedContextMenuOption, IconizedContextMenuOptionList } from "./IconizedContextMenu";
 import { WidgetLayoutStore } from "../../../stores/widgets/WidgetLayoutStore";
 import { MatrixClientPeg } from "../../../MatrixClientPeg";
-import { ViewRoomPayload } from "../../../dispatcher/payloads/ViewRoomPayload";
+import { type ViewRoomPayload } from "../../../dispatcher/payloads/ViewRoomPayload";
+import SettingsStore from "../../../settings/SettingsStore";
 
 export interface ThreadListContextMenuProps {
     mxEvent: MatrixEvent;
@@ -105,14 +106,27 @@ const ThreadListContextMenu: React.FC<ThreadListContextMenuProps> = ({
                                 iconClassName="mx_ThreadPanel_viewInRoom"
                             />
                         )}
-                        {permalinkCreator && (
-                            <IconizedContextMenuOption
-                                data-testid="copy-thread-link"
-                                onClick={(e) => copyLinkToThread(e)}
-                                label={_t("timeline|mab|copy_link_thread")}
-                                iconClassName="mx_ThreadPanel_copyLinkToThread"
-                            />
-                        )}
+                        {
+                        /**
+                        * IBM CHANGES FOR BRANDING - DO NOT OVERWRITE
+                        *
+                        * START
+                        */
+                        }
+                        { permalinkCreator && SettingsStore.getValue('ibm_showShareRoomDialog') &&
+                        <IconizedContextMenuOption
+                            data-testid="copy-thread-link"
+                            onClick={(e) => copyLinkToThread(e)}
+                            label={_t("timeline|mab|copy_link_thread")}
+                            iconClassName="mx_ThreadPanel_copyLinkToThread"
+                        /> }
+                        {
+                        /**
+                        * END
+                        *
+                        * IBM CHANGES FOR BRANDING - DO NOT OVERWRITE
+                        */
+                        }
                     </IconizedContextMenuOptionList>
                 </IconizedContextMenu>
             )}

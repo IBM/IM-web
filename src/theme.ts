@@ -3,9 +3,23 @@ Copyright 2024 New Vector Ltd.
 Copyright 2019 Michael Telatynski <7t3chguy@gmail.com>
 Copyright 2019 The Matrix.org Foundation C.I.C.
 
-SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only
+SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only OR LicenseRef-Element-Commercial
 Please see LICENSE files in the repository root for full details.
 */
+
+import "@fontsource/inter/400.css";
+import "@fontsource/inter/400-italic.css";
+import "@fontsource/inter/500.css";
+import "@fontsource/inter/500-italic.css";
+import "@fontsource/inter/600.css";
+import "@fontsource/inter/600-italic.css";
+import "@fontsource/inter/700.css";
+import "@fontsource/inter/700-italic.css";
+
+import "@fontsource/inconsolata/latin-ext-400.css";
+import "@fontsource/inconsolata/latin-400.css";
+import "@fontsource/inconsolata/latin-ext-700.css";
+import "@fontsource/inconsolata/latin-700.css";
 
 import { logger } from "matrix-js-sdk/src/logger";
 
@@ -72,11 +86,16 @@ export function isHighContrastTheme(theme: string): boolean {
 }
 
 export function enumerateThemes(): { [key: string]: string } {
-    const BUILTIN_THEMES = {
-        "light": _t("common|light"),
-        "light-high-contrast": _t("theme|light_high_contrast"),
-        "dark": _t("common|dark"),
-    };
+    /**
+     * IBM CHANGES FOR BRANDING - DO NOT OVERWRITE
+     *
+     * START
+    */
+    // const BUILTIN_THEMES = {
+    //     "light": _t("Light"),
+    //     "light-high-contrast": _t("Light high contrast"),
+    //     "dark": _t("Dark"),
+    // };
     const customThemes = SettingsStore.getValue("custom_themes") || [];
     const customThemeNames: Record<string, string> = {};
 
@@ -91,7 +110,13 @@ export function enumerateThemes(): { [key: string]: string } {
         });
     }
 
-    return Object.assign({}, customThemeNames, BUILTIN_THEMES);
+    //return Object.assign({}, customThemeNames, BUILTIN_THEMES);
+    return Object.assign({}, customThemeNames);
+    /**
+     * END
+     *
+     * IBM CHANGES FOR BRANDING - DO NOT OVERWRITE
+    */
 }
 
 export interface ITheme {
@@ -249,9 +274,9 @@ export function getCustomTheme(themeName: string): CustomTheme {
     if (!customThemes) {
         throw new Error(`No custom themes set, can't set custom theme "${themeName}"`);
     }
-    const customTheme = customThemes.find((t: ITheme) => t.name === themeName);
+    const customTheme = customThemes.find((t: CustomTheme) => t.name === themeName);
     if (!customTheme) {
-        const knownNames = customThemes.map((t: ITheme) => t.name).join(", ");
+        const knownNames = customThemes.map((t: CustomTheme) => t.name).join(", ");
         throw new Error(`Can't find custom theme "${themeName}", only know ${knownNames}`);
     }
     return customTheme;

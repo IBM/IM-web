@@ -1,16 +1,16 @@
 /*
-Copyright 2024 New Vector Ltd.
+Copyright 2024, 2025 New Vector Ltd.
 Copyright 2018-2024 The Matrix.org Foundation C.I.C.
 Copyright 2017 Travis Ralston
 
-SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only
+SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only OR LicenseRef-Element-Commercial
 Please see LICENSE files in the repository root for full details.
 */
 
-import React, { ReactNode } from "react";
+import React, { type ReactNode } from "react";
 import { UNSTABLE_MSC4133_EXTENDED_PROFILES } from "matrix-js-sdk/src/matrix";
 
-import { _t, _td, TranslationKey } from "../languageHandler";
+import { _t, _td, type TranslationKey } from "../languageHandler";
 import DeviceIsolationModeController from "./controllers/DeviceIsolationModeController.ts";
 import {
     NotificationBodyEnabledController,
@@ -21,7 +21,7 @@ import ReloadOnChangeController from "./controllers/ReloadOnChangeController";
 import FontSizeController from "./controllers/FontSizeController";
 import SystemFontController from "./controllers/SystemFontController";
 import { SettingLevel } from "./SettingLevel";
-import SettingController from "./controllers/SettingController";
+import type SettingController from "./controllers/SettingController";
 import { IS_MAC } from "../Keyboard";
 import UIFeatureController from "./controllers/UIFeatureController";
 import { UIFeature } from "./UIFeature";
@@ -35,9 +35,16 @@ import SlidingSyncController from "./controllers/SlidingSyncController";
 import { FontWatcher } from "./watchers/FontWatcher";
 import ServerSupportUnstableFeatureController from "./controllers/ServerSupportUnstableFeatureController";
 import { WatchManager } from "./WatchManager";
-import { CustomTheme } from "../theme";
+import { type CustomTheme } from "../theme";
 import AnalyticsController from "./controllers/AnalyticsController";
 import FallbackIceServerController from "./controllers/FallbackIceServerController";
+import { type IRightPanelForRoomStored } from "../stores/right-panel/RightPanelStoreIPanelState.ts";
+import { type ILayoutSettings } from "../stores/widgets/WidgetLayoutStore.ts";
+import { type ReleaseAnnouncementData } from "../stores/ReleaseAnnouncementStore.ts";
+import { type Json, type JsonValue } from "../@types/json.ts";
+import { type RecentEmojiData } from "../emojipicker/recent.ts";
+import { type Assignable } from "../@types/common.ts";
+import { SortingAlgorithm } from "../stores/room-list-v3/skip-list/sorters/index.ts";
 
 export const defaultWatchManager = new WatchManager();
 
@@ -85,18 +92,8 @@ export enum LabGroup {
 }
 
 export enum Features {
-    VoiceBroadcast = "feature_voice_broadcast",
-    VoiceBroadcastForceSmallChunks = "feature_voice_broadcast_force_small_chunks",
     NotificationSettings2 = "feature_notification_settings2",
-    OidcNativeFlow = "feature_oidc_native_flow",
     ReleaseAnnouncement = "feature_release_announcement",
-
-    /** If true, use the Rust crypto implementation.
-     *
-     * This is no longer read, but we continue to populate it on all devices, to guard against people rolling back to
-     * old versions of EW that do not use rust crypto by default.
-     */
-    RustCrypto = "feature_rust_crypto",
 }
 
 export const labGroupNames: Record<LabGroup, TranslationKey> = {
@@ -116,15 +113,7 @@ export const labGroupNames: Record<LabGroup, TranslationKey> = {
     [LabGroup.Ui]: _td("labs|group_ui"),
 };
 
-export type SettingValueType =
-    | boolean
-    | number
-    | string
-    | number[]
-    | string[]
-    | Record<string, unknown>
-    | Record<string, unknown>[]
-    | null;
+export type SettingValueType = Json | JsonValue | Record<string, unknown> | Record<string, unknown>[];
 
 export interface IBaseSetting<T extends SettingValueType = SettingValueType> {
     isFeature?: false | undefined;
@@ -174,7 +163,7 @@ export interface IBaseSetting<T extends SettingValueType = SettingValueType> {
         image?: string; // require(...)
         feedbackSubheading?: TranslationKey;
         feedbackLabel?: string;
-        extraSettings?: string[];
+        extraSettings?: BooleanSettingKey[];
         requiresRefresh?: boolean;
     };
 
@@ -191,7 +180,224 @@ export interface IFeature extends Omit<IBaseSetting<boolean>, "isFeature"> {
 // Type using I-identifier for backwards compatibility from before it became a discriminated union
 export type ISetting = IBaseSetting | IFeature;
 
-export const SETTINGS: { [setting: string]: ISetting } = {
+export interface Settings {
+    [settingName: `UIFeature.${string}`]: IBaseSetting<boolean>;
+
+    // We can't use the following type because of `feature_sliding_sync_proxy_url` & `feature_hidebold` being in the namespace incorrectly
+    // [settingName: `feature_${string}`]: IFeature;
+    "feature_video_rooms": IFeature;
+    [Features.NotificationSettings2]: IFeature;
+    [Features.ReleaseAnnouncement]: IFeature;
+    "feature_msc3531_hide_messages_pending_moderation": IFeature;
+    "feature_report_to_moderators": IFeature;
+    "feature_latex_maths": IFeature;
+    "feature_wysiwyg_composer": IFeature;
+    "feature_mjolnir": IFeature;
+    "feature_custom_themes": IFeature;
+    "feature_exclude_insecure_devices": IFeature;
+    "feature_html_topic": IFeature;
+    "feature_bridge_state": IFeature;
+    "feature_jump_to_date": IFeature;
+    "feature_sliding_sync": IFeature;
+    "feature_element_call_video_rooms": IFeature;
+    "feature_group_calls": IFeature;
+    "feature_disable_call_per_sender_encryption": IFeature;
+    "feature_allow_screen_share_only_mode": IFeature;
+    "feature_location_share_live": IFeature;
+    "feature_dynamic_room_predecessors": IFeature;
+    "feature_render_reaction_images": IFeature;
+    "feature_new_room_list": IFeature;
+    "feature_ask_to_join": IFeature;
+    "feature_notifications": IFeature;
+    // These are in the feature namespace but aren't actually features
+    "feature_sliding_sync_proxy_url": IBaseSetting<string>;
+    "feature_hidebold": IBaseSetting<boolean>;
+
+    "useOnlyCurrentProfiles": IBaseSetting<boolean>;
+    "mjolnirRooms": IBaseSetting<string[]>;
+    "mjolnirPersonalRoom": IBaseSetting<string | null>;
+    "RoomList.backgroundImage": IBaseSetting<string | null>;
+    "sendReadReceipts": IBaseSetting<boolean>;
+    "baseFontSize": IBaseSetting<"" | number>;
+    "baseFontSizeV2": IBaseSetting<"" | number>;
+    "fontSizeDelta": IBaseSetting<number>;
+    "useCustomFontSize": IBaseSetting<boolean>;
+    "MessageComposerInput.suggestEmoji": IBaseSetting<boolean>;
+    "MessageComposerInput.showStickersButton": IBaseSetting<boolean>;
+    "MessageComposerInput.showPollsButton": IBaseSetting<boolean>;
+    "MessageComposerInput.insertTrailingColon": IBaseSetting<boolean>;
+    "Notifications.alwaysShowBadgeCounts": IBaseSetting<boolean>;
+    "Notifications.showbold": IBaseSetting<boolean>;
+    "Notifications.tac_only_notifications": IBaseSetting<boolean>;
+    "useCompactLayout": IBaseSetting<boolean>;
+    "showRedactions": IBaseSetting<boolean>;
+    "showJoinLeaves": IBaseSetting<boolean>;
+    "showAvatarChanges": IBaseSetting<boolean>;
+    "showDisplaynameChanges": IBaseSetting<boolean>;
+    "showReadReceipts": IBaseSetting<boolean>;
+    "showTwelveHourTimestamps": IBaseSetting<boolean>;
+    "alwaysShowTimestamps": IBaseSetting<boolean>;
+    "userTimezone": IBaseSetting<string>;
+    "userTimezonePublish": IBaseSetting<boolean>;
+    "autoplayGifs": IBaseSetting<boolean>;
+    "autoplayVideo": IBaseSetting<boolean>;
+    "enableSyntaxHighlightLanguageDetection": IBaseSetting<boolean>;
+    "expandCodeByDefault": IBaseSetting<boolean>;
+    "showCodeLineNumbers": IBaseSetting<boolean>;
+    "scrollToBottomOnMessageSent": IBaseSetting<boolean>;
+    "Pill.shouldShowPillAvatar": IBaseSetting<boolean>;
+    "TextualBody.enableBigEmoji": IBaseSetting<boolean>;
+    "MessageComposerInput.isRichTextEnabled": IBaseSetting<boolean>;
+    "MessageComposer.showFormatting": IBaseSetting<boolean>;
+    "sendTypingNotifications": IBaseSetting<boolean>;
+    "showTypingNotifications": IBaseSetting<boolean>;
+    "ctrlFForSearch": IBaseSetting<boolean>;
+    "MessageComposerInput.ctrlEnterToSend": IBaseSetting<boolean>;
+    "MessageComposerInput.surroundWith": IBaseSetting<boolean>;
+    "MessageComposerInput.autoReplaceEmoji": IBaseSetting<boolean>;
+    "MessageComposerInput.useMarkdown": IBaseSetting<boolean>;
+    "VideoView.flipVideoHorizontally": IBaseSetting<boolean>;
+    "theme": IBaseSetting<string>;
+    "custom_themes": IBaseSetting<CustomTheme[]>;
+    "use_system_theme": IBaseSetting<boolean>;
+    "useBundledEmojiFont": IBaseSetting<boolean>;
+    "useSystemFont": IBaseSetting<boolean>;
+    "systemFont": IBaseSetting<string>;
+    "webRtcAllowPeerToPeer": IBaseSetting<boolean>;
+    "webrtc_audiooutput": IBaseSetting<string>;
+    "webrtc_audioinput": IBaseSetting<string>;
+    "webrtc_videoinput": IBaseSetting<string>;
+    "webrtc_audio_autoGainControl": IBaseSetting<boolean>;
+    "webrtc_audio_echoCancellation": IBaseSetting<boolean>;
+    "webrtc_audio_noiseSuppression": IBaseSetting<boolean>;
+    "language": IBaseSetting<string>;
+    "breadcrumb_rooms": IBaseSetting<string[]>;
+    "recent_emoji": IBaseSetting<RecentEmojiData>;
+    "SpotlightSearch.recentSearches": IBaseSetting<string[]>;
+    "SpotlightSearch.showNsfwPublicRooms": IBaseSetting<boolean>;
+    "room_directory_servers": IBaseSetting<string[]>;
+    "integrationProvisioning": IBaseSetting<boolean>;
+    "allowedWidgets": IBaseSetting<{ [eventId: string]: boolean }>;
+    "analyticsOptIn": IBaseSetting<boolean>;
+    "pseudonymousAnalyticsOptIn": IBaseSetting<boolean | null>;
+    "deviceClientInformationOptIn": IBaseSetting<boolean>;
+    "Registration.mobileRegistrationHelper": IBaseSetting<boolean>;
+    "autocompleteDelay": IBaseSetting<number>;
+    "readMarkerInViewThresholdMs": IBaseSetting<number>;
+    "readMarkerOutOfViewThresholdMs": IBaseSetting<number>;
+    "blacklistUnverifiedDevices": IBaseSetting<boolean>;
+    "urlPreviewsEnabled": IBaseSetting<boolean>;
+    "urlPreviewsEnabled_e2ee": IBaseSetting<boolean>;
+    "notificationsEnabled": IBaseSetting<boolean>;
+    "deviceNotificationsEnabled": IBaseSetting<boolean>;
+    "notificationSound": IBaseSetting<
+        | {
+              name: string;
+              type: string;
+              size: number;
+              url: string;
+          }
+        | false
+    >;
+    "notificationBodyEnabled": IBaseSetting<boolean>;
+    "audioNotificationsEnabled": IBaseSetting<boolean>;
+    "enableWidgetScreenshots": IBaseSetting<boolean>;
+    "promptBeforeInviteUnknownUsers": IBaseSetting<boolean>;
+    "widgetOpenIDPermissions": IBaseSetting<{
+        allow?: string[];
+        deny?: string[];
+    }>;
+    "breadcrumbs": IBaseSetting<boolean>;
+    "showHiddenEventsInTimeline": IBaseSetting<boolean>;
+    "lowBandwidth": IBaseSetting<boolean>;
+    "fallbackICEServerAllowed": IBaseSetting<boolean | null>;
+    "showImages": IBaseSetting<boolean>;
+    "showAvatarsOnInvites": IBaseSetting<boolean>;
+    "RoomList.preferredSorting": IBaseSetting<SortingAlgorithm>;
+    "RoomList.showMessagePreview": IBaseSetting<boolean>;
+    "RightPanel.phasesGlobal": IBaseSetting<IRightPanelForRoomStored | null>;
+    "RightPanel.phases": IBaseSetting<IRightPanelForRoomStored | null>;
+    "enableEventIndexing": IBaseSetting<boolean>;
+    "crawlerSleepTime": IBaseSetting<number>;
+    "showCallButtonsInComposer": IBaseSetting<boolean>;
+    "ircDisplayNameWidth": IBaseSetting<number>;
+    "layout": IBaseSetting<Layout>;
+    "Images.size": IBaseSetting<ImageSize>;
+    "showChatEffects": IBaseSetting<boolean>;
+    "Performance.addSendMessageTimingMetadata": IBaseSetting<boolean>;
+    "Widgets.pinned": IBaseSetting<{ [widgetId: string]: boolean }>;
+    "Widgets.layout": IBaseSetting<ILayoutSettings | null>;
+    "Spaces.allRoomsInHome": IBaseSetting<boolean>;
+    "Spaces.enabledMetaSpaces": IBaseSetting<Partial<Record<MetaSpace, boolean>>>;
+    "Spaces.showPeopleInSpace": IBaseSetting<boolean>;
+    "developerMode": IBaseSetting<boolean>;
+    "automaticErrorReporting": IBaseSetting<boolean>;
+    "automaticDecryptionErrorReporting": IBaseSetting<boolean>;
+    "automaticKeyBackNotEnabledReporting": IBaseSetting<boolean>;
+    "debug_scroll_panel": IBaseSetting<boolean>;
+    "debug_timeline_panel": IBaseSetting<boolean>;
+    "debug_registration": IBaseSetting<boolean>;
+    "debug_animation": IBaseSetting<boolean>;
+    "debug_legacy_call_handler": IBaseSetting<boolean>;
+    "audioInputMuted": IBaseSetting<boolean>;
+    "videoInputMuted": IBaseSetting<boolean>;
+    "activeCallRoomIds": IBaseSetting<string[]>;
+    "releaseAnnouncementData": IBaseSetting<ReleaseAnnouncementData>;
+    "Electron.autoLaunch": IBaseSetting<boolean>;
+    "Electron.warnBeforeExit": IBaseSetting<boolean>;
+    "Electron.alwaysShowMenuBar": IBaseSetting<boolean>;
+    "Electron.showTrayIcon": IBaseSetting<boolean>;
+    "Electron.enableHardwareAcceleration": IBaseSetting<boolean>;
+    "feature_poll_history": IBaseSetting<boolean>;
+    /**
+    * IBM CHANGES FOR BRANDING - DO NOT OVERWRITE
+    *
+    * START
+    */
+    "ibm_showPhoneNumber": IBaseSetting<boolean>;
+    "ibm_showEmail": IBaseSetting<boolean>;
+    "ibm_enableKeyBackup": IBaseSetting<boolean>;
+    "ibm_enableChangePassword": IBaseSetting<boolean>;
+    "ibm_showReadingConfirmation": IBaseSetting<boolean>;
+    "ibm_showEncryption": IBaseSetting<boolean>;
+    "ibm_showMemberEvents": IBaseSetting<boolean>;
+    "ibm_showTimelineSettings": IBaseSetting<boolean>;
+    "ibm_showShareRoomDialog": IBaseSetting<boolean>;
+    "ibm_showSpaceCommunitySettings": IBaseSetting<boolean>;
+    "ibm_enable_slashCommands_devTools": IBaseSetting<boolean>;
+    "ibm_showMobileGuide": IBaseSetting<boolean>;
+    "ibm_showExtendedRoomConfig": IBaseSetting<boolean>;
+    "ibm_showNetworkDropdown": IBaseSetting<boolean>;
+    "ibm_enableSearch": IBaseSetting<boolean>;
+    "ibm_enableThreads": IBaseSetting<boolean>;
+    "ibm_showSendLocation": IBaseSetting<boolean>;
+    "ibm_showExplicitRooms": IBaseSetting<boolean>;
+    "ibm_enableQrLogin": IBaseSetting<boolean>;
+    "ibm_verifyWebThroughMobile": IBaseSetting<boolean>;
+    "ibm_enable_slashCommands_textEffects": IBaseSetting<boolean>;
+    "ibm_enable_slashCommands_selfNickAvatar": IBaseSetting<boolean>;
+    "ibm_enable_slashCommands_roomProperties": IBaseSetting<boolean>;
+    "ibm_enable_slashCommands_userManagement": IBaseSetting<boolean>;
+    "ibm_enable_slashCommands_joinLeave": IBaseSetting<boolean>;
+    "ibm_enable_slashCommands_ignore": IBaseSetting<boolean>;
+    "ibm_enable_slashCommands_shortcuts": IBaseSetting<boolean>;
+    "ibm_enable_slashCommands_upgradeRoom": IBaseSetting<boolean>;
+    "ibm_enable_slashCommands_ban": IBaseSetting<boolean>;
+    "ibm_enable_slashCommands_verify": IBaseSetting<boolean>;
+    "ibm_enable_slashCommands_help": IBaseSetting<boolean>;
+    "ibm_enable_slashCommands_convertRooms": IBaseSetting<boolean>;
+    /**
+     * END
+     *
+     * IBM CHANGES FOR BRANDING - DO NOT OVERWRITE
+     */
+}
+
+export type SettingKey = keyof Settings;
+export type FeatureSettingKey = Assignable<Settings, IFeature>;
+export type BooleanSettingKey = Assignable<Settings, IBaseSetting<boolean>> | FeatureSettingKey;
+
+export const SETTINGS: Settings = {
     "feature_video_rooms": {
         isFeature: true,
         labsGroup: LabGroup.VoiceAndVideo,
@@ -447,32 +653,6 @@ export const SETTINGS: { [setting: string]: ISetting } = {
         shouldWarn: true,
         default: false,
     },
-    [Features.VoiceBroadcast]: {
-        isFeature: true,
-        labsGroup: LabGroup.Messaging,
-        supportedLevels: LEVELS_DEVICE_ONLY_SETTINGS_WITH_CONFIG_PRIORITISED,
-        supportedLevelsAreOrdered: true,
-        displayName: _td("labs|voice_broadcast"),
-        default: false,
-    },
-    [Features.VoiceBroadcastForceSmallChunks]: {
-        supportedLevels: LEVELS_DEVICE_ONLY_SETTINGS,
-        displayName: _td("labs|voice_broadcast_force_small_chunks"),
-        default: false,
-    },
-    [Features.OidcNativeFlow]: {
-        isFeature: true,
-        labsGroup: LabGroup.Developer,
-        supportedLevels: LEVELS_DEVICE_ONLY_SETTINGS_WITH_CONFIG_PRIORITISED,
-        supportedLevelsAreOrdered: true,
-        displayName: _td("labs|oidc_native_flow"),
-        description: _td("labs|oidc_native_flow_description"),
-        default: false,
-    },
-    [Features.RustCrypto]: {
-        supportedLevels: LEVELS_DEVICE_ONLY_SETTINGS,
-        default: true,
-    },
     /**
      * @deprecated in favor of {@link fontSizeDelta}
      */
@@ -490,6 +670,15 @@ export const SETTINGS: { [setting: string]: ISetting } = {
         supportedLevels: LEVELS_DEVICE_ONLY_SETTINGS_WITH_CONFIG_PRIORITISED,
         supportedLevelsAreOrdered: true,
         default: false,
+    },
+    "feature_new_room_list": {
+        supportedLevels: LEVELS_DEVICE_ONLY_SETTINGS_WITH_CONFIG_PRIORITISED,
+        labsGroup: LabGroup.Ui,
+        displayName: _td("labs|new_room_list"),
+        description: _td("labs|under_active_development"),
+        isFeature: true,
+        default: false,
+        controller: new ReloadOnChangeController(),
     },
     /**
      * With the transition to Compound we are moving to a base font size
@@ -746,7 +935,7 @@ export const SETTINGS: { [setting: string]: ISetting } = {
     },
     "custom_themes": {
         supportedLevels: LEVELS_ACCOUNT_SETTINGS,
-        default: [] as CustomTheme[],
+        default: [],
     },
     "use_system_theme": {
         supportedLevels: LEVELS_DEVICE_ONLY_SETTINGS,
@@ -857,10 +1046,6 @@ export const SETTINGS: { [setting: string]: ISetting } = {
         displayName: _td("settings|security|record_session_details"),
         default: false,
     },
-    "FTUE.useCaseSelection": {
-        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
-        default: null,
-    },
     "Registration.mobileRegistrationHelper": {
         supportedLevels: [SettingLevel.CONFIG],
         default: false,
@@ -951,11 +1136,6 @@ export const SETTINGS: { [setting: string]: ISetting } = {
         displayName: _td("settings|show_breadcrumbs"),
         default: true,
     },
-    "FTUE.userOnboardingButton": {
-        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
-        displayName: _td("settings|preferences|show_checklist_shortcuts"),
-        default: true,
-    },
     "showHiddenEventsInTimeline": {
         displayName: _td("devtools|show_hidden_events"),
         supportedLevels: LEVELS_DEVICE_ONLY_SETTINGS,
@@ -980,6 +1160,19 @@ export const SETTINGS: { [setting: string]: ISetting } = {
         supportedLevels: LEVELS_ACCOUNT_SETTINGS,
         displayName: _td("settings|image_thumbnails"),
         default: true,
+    },
+    "showAvatarsOnInvites": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        displayName: _td("settings|invite_avatars"),
+        default: true,
+    },
+    "RoomList.preferredSorting": {
+        supportedLevels: [SettingLevel.DEVICE],
+        default: SortingAlgorithm.Recency,
+    },
+    "RoomList.showMessagePreview": {
+        supportedLevels: [SettingLevel.DEVICE],
+        default: false,
     },
     "RightPanel.phasesGlobal": {
         supportedLevels: [SettingLevel.DEVICE],
@@ -1226,4 +1419,146 @@ export const SETTINGS: { [setting: string]: ISetting } = {
         displayName: _td("settings|preferences|enable_hardware_acceleration"),
         default: true,
     },
+    "feature_poll_history": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        default: true,
+    },
+    /**
+     * IBM CHANGES FOR BRANDING - DO NOT OVERWRITE
+     *
+     * START
+    */
+    "ibm_showPhoneNumber": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        default: true,
+    },
+    "ibm_showEmail": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        default: true,
+    },
+    "ibm_enableKeyBackup": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        default: true,
+    },
+    "ibm_enableChangePassword": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        default: true,
+    },
+    "ibm_showReadingConfirmation": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        default: true,
+    },
+    "ibm_showEncryption": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        default: true,
+    },
+    "ibm_showMemberEvents": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        default: true,
+    },
+    "ibm_showTimelineSettings": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        default: true,
+    },
+    "ibm_showShareRoomDialog": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        default: true,
+    },
+    "ibm_showSpaceCommunitySettings": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        default: true,
+    },
+    "ibm_enable_slashCommands_devTools": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        default: true,
+    },
+    "ibm_showMobileGuide": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        default: false,
+    },
+    "ibm_showExtendedRoomConfig": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        default: true,
+    },
+    "ibm_showNetworkDropdown": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        default: true,
+    },
+    "ibm_enableSearch": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        default: true,
+    },
+    "ibm_enableThreads": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        default: true,
+    },
+    "ibm_showSendLocation": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        default: true,
+    },
+    "ibm_showExplicitRooms": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        default: true,
+    },
+    "ibm_enableQrLogin": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        default: true,
+    },
+    "ibm_verifyWebThroughMobile": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        default: true,
+    },
+    "ibm_enable_slashCommands_textEffects": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        default: true,
+    },
+    "ibm_enable_slashCommands_selfNickAvatar": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        default: true,
+    },
+    "ibm_enable_slashCommands_roomProperties": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        default: true,
+    },
+    "ibm_enable_slashCommands_userManagement": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        default: true,
+    },
+    "ibm_enable_slashCommands_joinLeave": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        default: true,
+    },
+    "ibm_enable_slashCommands_ignore": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        default: true,
+    },
+    "ibm_enable_slashCommands_shortcuts": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        default: true,
+    },
+    "ibm_enable_slashCommands_upgradeRoom": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        default: true,
+    },
+    "ibm_enable_slashCommands_ban": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        default: true,
+    },
+    "ibm_enable_slashCommands_verify": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        default: true,
+    },
+    "ibm_enable_slashCommands_help": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        default: true,
+    },
+    "ibm_enable_slashCommands_convertRooms": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        default: true,
+    }
+    /**
+     * END
+     *
+     * IBM CHANGES FOR BRANDING - DO NOT OVERWRITE
+    */
 };

@@ -2,29 +2,29 @@
 Copyright 2024 New Vector Ltd.
 Copyright 2021 The Matrix.org Foundation C.I.C.
 
-SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only
+SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only OR LicenseRef-Element-Commercial
 Please see LICENSE files in the repository root for full details.
 */
 
-import React, { ReactNode, useEffect, useState } from "react";
-import { JoinRule, RestrictedAllowType, Room, EventType, Visibility } from "matrix-js-sdk/src/matrix";
-import { RoomJoinRulesEventContent } from "matrix-js-sdk/src/types";
+import React, { type ReactNode, useEffect, useState } from "react";
+import { JoinRule, RestrictedAllowType, type Room, EventType, Visibility } from "matrix-js-sdk/src/matrix";
+import { type RoomJoinRulesEventContent } from "matrix-js-sdk/src/types";
 
-import StyledRadioGroup, { IDefinition } from "../elements/StyledRadioGroup";
+import StyledRadioGroup, { type IDefinition } from "../elements/StyledRadioGroup";
 import { _t } from "../../../languageHandler";
 import AccessibleButton from "../elements/AccessibleButton";
 import RoomAvatar from "../avatars/RoomAvatar";
 import SpaceStore from "../../../stores/spaces/SpaceStore";
 import Modal from "../../../Modal";
 import ManageRestrictedJoinRuleDialog from "../dialogs/ManageRestrictedJoinRuleDialog";
-import RoomUpgradeWarningDialog, { IFinishedOpts } from "../dialogs/RoomUpgradeWarningDialog";
+import RoomUpgradeWarningDialog, { type IFinishedOpts } from "../dialogs/RoomUpgradeWarningDialog";
 import { upgradeRoom } from "../../../utils/RoomUpgrade";
 import { arrayHasDiff } from "../../../utils/arrays";
 import { useLocalEcho } from "../../../hooks/useLocalEcho";
 import dis from "../../../dispatcher/dispatcher";
 import { RoomSettingsTab } from "../dialogs/RoomSettingsDialog";
 import { Action } from "../../../dispatcher/actions";
-import { ViewRoomPayload } from "../../../dispatcher/payloads/ViewRoomPayload";
+import { type ViewRoomPayload } from "../../../dispatcher/payloads/ViewRoomPayload";
 import { doesRoomVersionSupport, PreferredRoomVersions } from "../../../utils/PreferredRoomVersions";
 import SettingsStore from "../../../settings/SettingsStore";
 import LabelledCheckbox from "../elements/LabelledCheckbox";
@@ -287,19 +287,30 @@ const JoinRuleSettings: React.FC<JoinRuleSettingsProps> = ({
         } else {
             description = _t("room_settings|security|join_rule_restricted_description_prompt");
         }
-
-        definitions.splice(1, 0, {
-            value: JoinRule.Restricted,
-            label: (
-                <>
+        /**
+        * IBM CHANGES FOR BRANDING - DO NOT OVERWRITE
+        *
+        * START
+        */
+        if (SettingsStore.getValue('ibm_showSpaceCommunitySettings')) {
+            definitions.splice(1, 0, {
+                value: JoinRule.Restricted,
+                label: (
+                    <>
                     {_t("room_settings|security|join_rule_restricted")}
-                    {preferredRestrictionVersion && upgradeRequiredPill}
-                </>
-            ),
-            description,
-            // if there are 0 allowed spaces then render it as invite only instead
-            checked: joinRule === JoinRule.Restricted && !!restrictedAllowRoomIds?.length,
-        });
+                        {preferredRestrictionVersion && upgradeRequiredPill}
+                    </>
+                ),
+                description,
+                // if there are 0 allowed spaces then render it as invite only instead
+                checked: joinRule === JoinRule.Restricted && !!restrictedAllowRoomIds?.length,
+            });
+        }
+        /**
+        * END
+        *
+        * IBM CHANGES FOR BRANDING - DO NOT OVERWRITE
+        */
     }
 
     if (askToJoinEnabled && (roomSupportsKnock || preferredKnockVersion)) {

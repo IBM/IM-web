@@ -4,7 +4,7 @@ Copyright 2021 The Matrix.org Foundation C.I.C.
 Copyright 2019 New Vector Ltd
 Copyright 2017 Travis Ralston
 
-SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only
+SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only OR LicenseRef-Element-Commercial
 Please see LICENSE files in the repository root for full details.
 */
 
@@ -36,7 +36,9 @@ Please see LICENSE files in the repository root for full details.
 
     .mx_TabbedView_tabLabel:hover,
     .mx_TabbedView_tabLabel_active {
-        color: $tab-label-active-fg-color;
+        /** IBM CHANGES FOR BRANDING - DO NOT OVERWRITE - START **/
+        color: var(--secondary-content);
+        /** IBM CHANGES FOR BRANDING - DO NOT OVERWRITE - END **/
 
         .mx_TabbedView_maskedIcon::before {
             background-color: var(--cpd-color-icon-primary);

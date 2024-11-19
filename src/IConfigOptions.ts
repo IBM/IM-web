@@ -3,13 +3,13 @@ Copyright 2024 New Vector Ltd.
 Copyright 2019-2022 The Matrix.org Foundation C.I.C.
 Copyright 2016 OpenMarket Ltd
 
-SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only
+SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only OR LicenseRef-Element-Commercial
 Please see LICENSE files in the repository root for full details.
 */
 
-import { IClientWellKnown } from "matrix-js-sdk/src/matrix";
+import { type IClientWellKnown } from "matrix-js-sdk/src/matrix";
 
-import { ValidatedServerConfig } from "./utils/ValidatedServerConfig";
+import { type ValidatedServerConfig } from "./utils/ValidatedServerConfig";
 
 // Convention decision: All config options are lower_snake_case
 // We use an isolated file for the interface so we can mess around with the eslint options.
@@ -18,7 +18,25 @@ import { ValidatedServerConfig } from "./utils/ValidatedServerConfig";
 /* eslint @typescript-eslint/naming-convention: ["error", { "selector": "property", "format": ["snake_case"] } ] */
 
 // see element-web config.md for non-developer docs
+/**
+* IBM CHANGES FOR BRANDING - DO NOT OVERWRITE
+*
+* START
+*/
 export interface IConfigOptions {
+    version: string;
+    key_backup_url: any;
+    custom_about_url: any;
+    custom_help_url: any;
+    credits_url: any;
+    credits_name: any;
+    license_url: any;
+    license_name: any;
+/**
+ * END
+ *
+ * IBM CHANGES FOR BRANDING - DO NOT OVERWRITE
+ */
     // dev note: while true that this is arbitrary JSON, it's valuable to enforce that all
     // config options are documented for "find all usages" sort of searching.
     // [key: string]: any;
@@ -71,7 +89,7 @@ export interface IConfigOptions {
         url: string; // download url
         url_macos?: string;
         url_win64?: string;
-        url_win32?: string;
+        url_win64arm?: string;
         url_linux?: string;
     };
     mobile_builds: {
@@ -175,13 +193,6 @@ export interface IConfigOptions {
     sync_timeline_limit?: number;
     dangerously_allow_unsafe_and_insecure_passwords?: boolean; // developer option
 
-    voice_broadcast?: {
-        // length per voice chunk in seconds
-        chunk_length?: number;
-        // max voice broadcast length in seconds
-        max_length?: number;
-    };
-
     user_notice?: {
         title: string;
         description: string;
@@ -213,6 +224,8 @@ export interface IConfigOptions {
         policy_uri?: string;
         contacts?: string[];
     };
+
+    modules?: string[];
 }
 
 export interface ISsoRedirectOptions {

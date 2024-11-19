@@ -3,7 +3,7 @@ Copyright 2024 New Vector Ltd.
 Copyright 2015-2021 The Matrix.org Foundation C.I.C.
 Copyright 2018 Michael Telatynski <7t3chguy@gmail.com>
 
-SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only
+SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only OR LicenseRef-Element-Commercial
 Please see LICENSE files in the repository root for full details.
 */
 
@@ -22,7 +22,7 @@ import { UIFeature } from "../../../settings/UIFeature";
 import Modal from "../../../Modal";
 import ErrorDialog from "../dialogs/ErrorDialog";
 import BugReportDialog from "../dialogs/BugReportDialog";
-import AccessibleButton, { ButtonEvent } from "../elements/AccessibleButton";
+import AccessibleButton, { type ButtonEvent } from "../elements/AccessibleButton";
 import { contextMenuBelow } from "../rooms/RoomTile";
 import { ContextMenuTooltipButton } from "../../structures/ContextMenu";
 import IconizedContextMenu, {
@@ -30,7 +30,7 @@ import IconizedContextMenu, {
     IconizedContextMenuOptionList,
 } from "../context_menus/IconizedContextMenu";
 import JumpToDatePicker from "./JumpToDatePicker";
-import { ViewRoomPayload } from "../../../dispatcher/payloads/ViewRoomPayload";
+import { type ViewRoomPayload } from "../../../dispatcher/payloads/ViewRoomPayload";
 import { SdkContextClass } from "../../../contexts/SDKContext";
 import TimelineSeparator from "./TimelineSeparator";
 
@@ -58,7 +58,9 @@ export default class DateSeparator extends React.Component<IProps, IState> {
         this.state = {
             jumpToDateEnabled: SettingsStore.getValue("feature_jump_to_date"),
         };
+    }
 
+    public componentDidMount(): void {
         // We're using a watcher so the date headers in the timeline are updated
         // when the lab setting is toggled.
         this.settingWatcherRef = SettingsStore.watchSetting(
@@ -71,7 +73,7 @@ export default class DateSeparator extends React.Component<IProps, IState> {
     }
 
     public componentWillUnmount(): void {
-        if (this.settingWatcherRef) SettingsStore.unwatchSetting(this.settingWatcherRef);
+        SettingsStore.unwatchSetting(this.settingWatcherRef);
     }
 
     private onContextMenuOpenClick = (e: ButtonEvent): void => {

@@ -2,23 +2,24 @@
 Copyright 2018-2024 New Vector Ltd.
 Copyright 2015, 2016 OpenMarket Ltd
 
-SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only
+SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only OR LicenseRef-Element-Commercial
 Please see LICENSE files in the repository root for full details.
 */
 
 import React from "react";
-import { MatrixClient } from "matrix-js-sdk/src/matrix";
+import { type MatrixClient } from "matrix-js-sdk/src/matrix";
 
 import Field from "../elements/Field";
 import { MatrixClientPeg } from "../../../MatrixClientPeg";
-import AccessibleButton, { AccessibleButtonKind } from "../elements/AccessibleButton";
+import AccessibleButton, { type AccessibleButtonKind } from "../elements/AccessibleButton";
 import Spinner from "../elements/Spinner";
-import withValidation, { IFieldState, IValidationResult } from "../elements/Validation";
+import withValidation, { type IFieldState, type IValidationResult } from "../elements/Validation";
 import { UserFriendlyError, _t, _td } from "../../../languageHandler";
 import Modal from "../../../Modal";
 import PassphraseField from "../auth/PassphraseField";
 import { PASSWORD_MIN_SCORE } from "../auth/RegistrationForm";
 import SetEmailDialog from "../dialogs/SetEmailDialog";
+import SettingsStore from "../../../settings/SettingsStore";
 
 const FIELD_OLD_PASSWORD = "field_old_password";
 const FIELD_NEW_PASSWORD = "field_new_password";
@@ -326,8 +327,18 @@ export default class ChangePassword extends React.Component<IProps, IState> {
 
         switch (this.state.phase) {
             case Phase.Edit:
-                return (
-                    <form className={this.props.className} onSubmit={this.onClickChange}>
+            /**
+            * IBM CHANGES FOR BRANDING - DO NOT OVERWRITE
+            *
+            * START
+            */
+            return SettingsStore.getValue("ibm_enableChangePassword") && (
+            /**
+            * END
+            *
+            * IBM CHANGES FOR BRANDING - DO NOT OVERWRITE
+            */
+                <form className={this.props.className} onSubmit={this.onClickChange}>
                         <div className={rowClassName}>
                             <Field
                                 ref={(field) => (this[FIELD_OLD_PASSWORD] = field)}

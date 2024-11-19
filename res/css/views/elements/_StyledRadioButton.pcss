@@ -2,7 +2,7 @@
 Copyright 2024 New Vector Ltd.
 Copyright 2020 The Matrix.org Foundation C.I.C.
 
-SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only
+SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only OR LicenseRef-Element-Commercial
 Please see LICENSE files in the repository root for full details.
 */
 
@@ -13,7 +13,9 @@ Please see LICENSE files in the repository root for full details.
 
 .mx_StyledRadioButton {
     $radio-circle-color: var(--cpd-color-border-interactive-primary);
-    $active-radio-circle-color: var(--cpd-color-bg-accent-rest);
+    /** IBM CHANGES FOR BRANDING - DO NOT OVERWRITE - START **/
+    $active-radio-circle-color: var(--accent-color);
+    /** IBM CHANGES FOR BRANDING - DO NOT OVERWRITE - END **/
     position: relative;
 
     display: flex;
@@ -118,5 +120,5 @@ Please see LICENSE files in the repository root for full details.
 }
 
 .mx_StyledRadioButton_checked {
-    border-color: var(--cpd-color-bg-accent-rest);
+    border-color: var(--accent-color);
 }

@@ -2,12 +2,12 @@
 Copyright 2024 New Vector Ltd.
 Copyright 2023 The Matrix.org Foundation C.I.C.
 
-SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only
+SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only OR LicenseRef-Element-Commercial
 Please see LICENSE files in the repository root for full details.
 */
 
-import { Room } from "matrix-js-sdk/src/matrix";
-import React, { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import { type Room } from "matrix-js-sdk/src/matrix";
+import React, { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { CallType } from "matrix-js-sdk/src/webrtc/call";
 
 import { useFeatureEnabled } from "../useSettings";
@@ -24,11 +24,11 @@ import { Container, WidgetLayoutStore } from "../../stores/widgets/WidgetLayoutS
 import { useRoomState } from "../useRoomState";
 import { _t } from "../../languageHandler";
 import { isManagedHybridWidget, isManagedHybridWidgetEnabled } from "../../widgets/ManagedHybrid";
-import { IApp } from "../../stores/WidgetStore";
+import { type IApp } from "../../stores/WidgetStore";
 import { SdkContextClass } from "../../contexts/SDKContext";
 import { UPDATE_EVENT } from "../../stores/AsyncStore";
 import defaultDispatcher from "../../dispatcher/dispatcher";
-import { ViewRoomPayload } from "../../dispatcher/payloads/ViewRoomPayload";
+import { type ViewRoomPayload } from "../../dispatcher/payloads/ViewRoomPayload";
 import { Action } from "../../dispatcher/actions";
 import { CallStore, CallStoreEvent } from "../../stores/CallStore";
 import { isVideoRoom } from "../../utils/video-rooms";
@@ -36,30 +36,41 @@ import { useGuestAccessInformation } from "./useGuestAccessInformation";
 import SettingsStore from "../../settings/SettingsStore";
 import { UIFeature } from "../../settings/UIFeature";
 import { BetaPill } from "../../components/views/beta/BetaCard";
+import { type InteractionName } from "../../PosthogTrackers";
 
 export enum PlatformCallType {
     ElementCall,
     JitsiCall,
     LegacyCall,
 }
-export const getPlatformCallTypeLabel = (platformCallType: PlatformCallType): string => {
+
+export const getPlatformCallTypeProps = (
+    platformCallType: PlatformCallType,
+): {
+    label: string;
+    children?: ReactNode;
+    analyticsName: InteractionName;
+} => {
     switch (platformCallType) {
         case PlatformCallType.ElementCall:
-            return _t("voip|element_call");
+            return {
+                label: _t("voip|element_call"),
+                analyticsName: "WebVoipOptionElementCall",
+                children: <BetaPill />,
+            };
         case PlatformCallType.JitsiCall:
-            return _t("voip|jitsi_call");
+            return {
+                label: _t("voip|jitsi_call"),
+                analyticsName: "WebVoipOptionJitsi",
+            };
         case PlatformCallType.LegacyCall:
-            return _t("voip|legacy_call");
+            return {
+                label: _t("voip|legacy_call"),
+                analyticsName: "WebVoipOptionLegacy",
+            };
     }
 };
-export const getPlatformCallTypeChildren = (platformCallType: PlatformCallType): ReactNode => {
-    switch (platformCallType) {
-        case PlatformCallType.ElementCall:
-            return <BetaPill />;
-        default:
-            return null;
-    }
-};
+
 const enum State {
     NoCall,
     NoOneHere,

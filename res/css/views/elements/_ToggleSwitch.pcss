@@ -1,7 +1,7 @@
 /*
 Copyright 2019-2024 New Vector Ltd.
 
-SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only
+SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only OR LicenseRef-Element-Commercial
 Please see LICENSE files in the repository root for full details.
 */
 
@@ -27,8 +27,10 @@ Please see LICENSE files in the repository root for full details.
         border: var(--cpd-border-width-1) solid var(--cpd-color-border-interactive-primary);
 
         &.mx_ToggleSwitch_on {
-            background-color: var(--cpd-color-bg-accent-rest);
-            border-color: var(--cpd-color-bg-accent-rest);
+            /** IBM CHANGES FOR BRANDING - DO NOT OVERWRITE - START **/
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+            /** IBM CHANGES FOR BRANDING - DO NOT OVERWRITE - END **/
         }
 
         > .mx_ToggleSwitch_ball {

@@ -2,7 +2,7 @@
 Copyright 2024 New Vector Ltd.
 Copyright 2024 The Matrix.org Foundation C.I.C.
 
-SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only
+SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only OR LicenseRef-Element-Commercial
 Please see LICENSE files in the repository root for full details.
 */
 
@@ -12,9 +12,9 @@ import { Alert } from "@vector-im/compound-web";
 
 import { _t } from "../../../languageHandler";
 import InlineSpinner from "../elements/InlineSpinner";
-import SettingsSubsection from "./shared/SettingsSubsection";
+import { SettingsSubsection } from "./shared/SettingsSubsection";
 import { useMatrixClientContext } from "../../../contexts/MatrixClientContext";
-import { ThirdPartyIdentifier } from "../../../AddThreepid";
+import { type ThirdPartyIdentifier } from "../../../AddThreepid";
 import SettingsStore from "../../../settings/SettingsStore";
 import { UIFeature } from "../../../settings/UIFeature";
 import { AddRemoveThreepids } from "./AddRemoveThreepids";
@@ -82,8 +82,15 @@ export const UserPersonalInfoSettings: React.FC<UserPersonalInfoSettingsProps> =
 
     return (
         <div>
-            <h2>{_t("settings|general|personal_info")}</h2>
-            <SettingsSubsection
+            {
+            /**
+             * IBM CHANGES FOR BRANDING - DO NOT OVERWRITE
+             *
+             * START
+            */
+            }
+            {(SettingsStore.getValue("ibm_showEmail") || SettingsStore.getValue("ibm_showPhoneNumber")) && <h2>{_t("settings|general|personal_info")}</h2>}
+            {SettingsStore.getValue("ibm_showEmail") && <SettingsSubsection
                 heading={_t("settings|general|emails_heading")}
                 stretchContent
                 data-testid="mx_AccountEmailAddresses"
@@ -101,9 +108,9 @@ export const UserPersonalInfoSettings: React.FC<UserPersonalInfoSettingsProps> =
                         isLoading={loadingState === "loading"}
                     />
                 </ThreepidSectionWrapper>
-            </SettingsSubsection>
+            </SettingsSubsection>}
 
-            <SettingsSubsection
+            {SettingsStore.getValue("ibm_showPhoneNumber") && <SettingsSubsection
                 heading={_t("settings|general|msisdns_heading")}
                 stretchContent
                 data-testid="mx_AccountPhoneNumbers"
@@ -121,9 +128,14 @@ export const UserPersonalInfoSettings: React.FC<UserPersonalInfoSettingsProps> =
                         isLoading={loadingState === "loading"}
                     />
                 </ThreepidSectionWrapper>
-            </SettingsSubsection>
+            </SettingsSubsection>}
+            {
+            /**
+             * END
+             *
+             * IBM CHANGES FOR BRANDING - DO NOT OVERWRITE
+            */
+            }
         </div>
     );
 };
-
-export default UserPersonalInfoSettings;

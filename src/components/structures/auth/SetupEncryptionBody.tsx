@@ -2,14 +2,14 @@
 Copyright 2024 New Vector Ltd.
 Copyright 2020, 2021 The Matrix.org Foundation C.I.C.
 
-SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only
+SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only OR LicenseRef-Element-Commercial
 Please see LICENSE files in the repository root for full details.
 */
 
 import React from "react";
-import { KeyBackupInfo, VerificationRequest } from "matrix-js-sdk/src/crypto-api";
+import { type KeyBackupInfo, type VerificationRequest } from "matrix-js-sdk/src/crypto-api";
 import { logger } from "matrix-js-sdk/src/logger";
-import { SecretStorageKeyDescription } from "matrix-js-sdk/src/secret-storage";
+import { type SecretStorageKeyDescription } from "matrix-js-sdk/src/secret-storage";
 
 import { _t } from "../../../languageHandler";
 import { MatrixClientPeg } from "../../../MatrixClientPeg";
@@ -17,8 +17,9 @@ import Modal from "../../../Modal";
 import VerificationRequestDialog from "../../views/dialogs/VerificationRequestDialog";
 import { SetupEncryptionStore, Phase } from "../../../stores/SetupEncryptionStore";
 import EncryptionPanel from "../../views/right_panel/EncryptionPanel";
-import AccessibleButton, { ButtonEvent } from "../../views/elements/AccessibleButton";
+import AccessibleButton, { type ButtonEvent } from "../../views/elements/AccessibleButton";
 import Spinner from "../../views/elements/Spinner";
+import SettingsStore from "../../../settings/SettingsStore";
 
 function keyHasPassphrase(keyInfo: SecretStorageKeyDescription): boolean {
     return Boolean(keyInfo.passphrase && keyInfo.passphrase.salt && keyInfo.passphrase.iterations);
@@ -39,7 +40,6 @@ export default class SetupEncryptionBody extends React.Component<IProps, IState>
     public constructor(props: IProps) {
         super(props);
         const store = SetupEncryptionStore.sharedInstance();
-        store.on("update", this.onStoreUpdate);
         store.start();
         this.state = {
             phase: store.phase,
@@ -50,6 +50,11 @@ export default class SetupEncryptionBody extends React.Component<IProps, IState>
             backupInfo: store.backupInfo,
             lostKeys: store.lostKeys(),
         };
+    }
+
+    public componentDidMount(): void {
+        const store = SetupEncryptionStore.sharedInstance();
+        store.on("update", this.onStoreUpdate);
     }
 
     private onStoreUpdate = (): void => {
@@ -168,8 +173,14 @@ export default class SetupEncryptionBody extends React.Component<IProps, IState>
                     recoveryKeyPrompt = _t("encryption|verification|verify_using_key");
                 }
 
+                /**
+                 * IBM CHANGES FOR BRANDING - DO NOT OVERWRITE
+                 *
+                 * START
+                */
+
                 let useRecoveryKeyButton;
-                if (recoveryKeyPrompt) {
+                if (recoveryKeyPrompt && !SettingsStore.getValue("ibm_verifyWebThroughMobile")) {
                     useRecoveryKeyButton = (
                         <AccessibleButton kind="primary" onClick={this.onUsePassphraseClick}>
                             {recoveryKeyPrompt}
@@ -189,11 +200,14 @@ export default class SetupEncryptionBody extends React.Component<IProps, IState>
                 return (
                     <div>
                         <p>{_t("encryption|verification|verification_description")}</p>
-
+                        {SettingsStore.getValue("ibm_verifyWebThroughMobile") &&
+                        <p>{_t("encryption|verification|must_use_other_device_description")}</p>
+                        }
                         <div className="mx_CompleteSecurity_actionRow">
                             {verifyButton}
                             {useRecoveryKeyButton}
                         </div>
+                        {!SettingsStore.getValue("ibm_verifyWebThroughMobile") &&
                         <div className="mx_SetupEncryptionBody_reset">
                             {_t("encryption|reset_all_button", undefined, {
                                 a: (sub) => (
@@ -207,9 +221,15 @@ export default class SetupEncryptionBody extends React.Component<IProps, IState>
                                 ),
                             })}
                         </div>
+                        }
                     </div>
                 );
             }
+        /**
+        * END
+        *
+        * IBM CHANGES FOR BRANDING - DO NOT OVERWRITE
+        */
         } else if (phase === Phase.Done) {
             let message: JSX.Element;
             if (this.state.backupInfo) {

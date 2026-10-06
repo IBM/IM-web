@@ -78,7 +78,7 @@
         "wrap-ansi-cjs": "npm:wrap-ansi@^7.0.0",
         "wrap-ansi": "npm:wrap-ansi@^7.0.0",
         "jsrsasign": "11.1.1",
-        "shell-quote": "1.8.4",
+        "shell-quote": "1.9.0",
         "websocket-driver": "0.7.5"
     },
     "dependencies": {

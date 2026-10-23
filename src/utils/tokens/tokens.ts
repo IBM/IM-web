@@ -141,35 +141,24 @@ export async function persistTokenInStorage(
                 encrKey.fill(0);
             } catch (e) {
                 // This is likely due to the browser not having WebCrypto or somesuch.
-                // Warn about it, but fall back to storing the unencrypted token.
-                logger.warn(`Could not encrypt token for ${tokenName}`, e);
+                // Warn about it, and do not persist the token unencrypted.
+                logger.warn(`Could not encrypt token for ${tokenName}; token will not be persisted`, e);
             }
         }
         try {
-            // Save either the encrypted access token, or the plain access
-            // token if there is no token or we were unable to encrypt (e.g. if the browser doesn't
-            // have WebCrypto).
-            await StorageAccess.idbSave("account", storageKey, encryptedToken || token);
-        } catch {
-            // if we couldn't save to indexedDB, fall back to localStorage.  We
-            // store the access token unencrypted since localStorage only saves
-            // strings.
-            if (!!token) {
-                localStorage.setItem(storageKey, token);
-            } else {
-                localStorage.removeItem(storageKey);
-            }
+            // Save encrypted token only. If there is no token, clear stored value.
+            await StorageAccess.idbSave("account", storageKey, encryptedToken);
+        } catch (e) {
+            // Do not fall back to localStorage with plaintext.
+            logger.warn(`Could not persist encrypted token for ${tokenName}`, e);
+            localStorage.removeItem(storageKey);
         }
     } else {
-        try {
-            await StorageAccess.idbSave("account", storageKey, token);
-        } catch {
-            if (!!token) {
-                localStorage.setItem(storageKey, token);
-            } else {
-                localStorage.removeItem(storageKey);
-            }
+        // Never persist tokens without a pickle key as that would require cleartext storage.
+        if (token) {
+            logger.warn(`No pickle key available for ${tokenName}; token will not be persisted`);
         }
+        localStorage.removeItem(storageKey);
     }
 }
 
